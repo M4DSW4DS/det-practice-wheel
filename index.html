@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DET Practice Wheel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0f14; --panel: #131f24; --card: #1e2d35; --border: #2b3d47;
+            --sys-cyan: #00e5ff; --sys-green: #58cc02; --sys-green-dark: #46a302; --sys-gold: #ffc800;
+            --p1-color: #ff4b4b; --p2-color: #ff9600; --p3-color: #ce82ff;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            background-color: var(--bg); font-family: 'Nunito', sans-serif; height: 100vh; width: 100vw; overflow: hidden; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 10px; color: #fff; user-select: none; position: relative;
+        }
+        #matrixCanvas { position: fixed; inset: 0; z-index: -1; opacity: 0.15; pointer-events: none; }
+        
+        h1 { font-size: clamp(1.8rem, 3.5vw, 2.5rem); font-weight: 900; color: #fff; text-transform: uppercase; margin-top: -15px; margin-bottom: 10px; text-align: center; text-shadow: 0 0 10px var(--sys-cyan), 0 0 20px rgba(0, 229, 255, 0.5); letter-spacing: 8px;}
+        
+        .top-controls { position: fixed; top: 10px; right: 10px; z-index: 50; display: flex; gap: 10px; }
+        .icon-btn { 
+            background: var(--panel); border: 2px solid var(--sys-cyan); border-radius: 50%; 
+            width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; 
+            font-size: 1.2rem; cursor: pointer; transition: 0.2s; box-shadow: 0 0 10px rgba(0, 229, 255, 0.3); color: #fff;
+        }
+        .icon-btn:hover { transform: scale(1.1); box-shadow: 0 0 20px rgba(0, 229, 255, 0.6); }
+
+        .game-layout { 
+            display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 1300px; gap: 20px; z-index: 1; 
+            transform: scale(0.98); transform-origin: center center;
+        }
+        
+        .right-panel { display: none; }
+        .dashboard { width: 100%; height: 100%; box-sizing: border-box; background: var(--panel); border: 2px solid var(--border); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; transition: 0.3s; overflow: hidden; }
+        .dashboard.p1-active { border-color: var(--p1-color); box-shadow: 0 0 15px rgba(255, 75, 75, 0.4); }
+        .dashboard.p2-active { border-color: var(--p2-color); box-shadow: 0 0 15px rgba(255, 150, 0, 0.4); }
+        .dashboard.p3-active { border-color: var(--p3-color); box-shadow: 0 0 15px rgba(206, 130, 255, 0.4); }
+
+        .skills-grid { display: flex; flex-direction: column; justify-content: space-between; flex-grow: 1; height: 100%; gap: 2px; } 
+        .skill-item { background: #0d161a; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.75rem; font-weight: 800; display: flex; justify-content: space-between; align-items: center; gap: 5px; height: 100%; }
+        .skill-item.done { opacity: 0.5; border-color: var(--sys-green); box-shadow: 0 0 10px rgba(88,204,2,0.2); }
+        .skill-name { display: flex; align-items: center; gap: 4px; white-space: nowrap;}
+        .skill-bar { display: flex; gap: 2px; width: 60px; height: 8px;}
+        .skill-seg { flex: 1; background: #2b3d47; border-radius: 2px; transition: 0.3s; }
+        .skill-seg.filled { background: var(--sys-cyan); box-shadow: 0 0 5px var(--sys-cyan); }
+
+        .player-switch { display: flex; gap: 10px; width: 100%; max-width: 650px; flex-wrap: wrap; justify-content: center; }
+        .player-card { flex: 1 1 180px; background: var(--panel); border: 2px solid var(--border); border-radius: 16px; padding: 10px; cursor: pointer; transition: 0.3s; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-width: 160px; position: relative; overflow: hidden; transform: scale(0.95); opacity: 0.6; }
+        
+        .player-card.p1.active { transform: scale(1.03); opacity: 1; z-index: 10; border-color: var(--p1-color); box-shadow: 0 0 15px rgba(255, 75, 75, 0.3); background: radial-gradient(circle at center, rgba(255, 75, 75, 0.1) 0%, var(--panel) 80%); }
+        .player-card.p2.active { transform: scale(1.03); opacity: 1; z-index: 10; border-color: var(--p2-color); box-shadow: 0 0 15px rgba(255, 150, 0, 0.3); background: radial-gradient(circle at center, rgba(255, 150, 0, 0.1) 0%, var(--panel) 80%); }
+        .player-card.p3.active { transform: scale(1.03); opacity: 1; z-index: 10; border-color: var(--p3-color); box-shadow: 0 0 15px rgba(206, 130, 255, 0.3); background: radial-gradient(circle at center, rgba(206, 130, 255, 0.1) 0%, var(--panel) 80%); }
+        
+        .player-content { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+        
+        @keyframes pulse-p1 { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 5px var(--p1-color)); } 50% { transform: scale(1.1); filter: drop-shadow(0 0 15px var(--p1-color)); } }
+        @keyframes pulse-p2 { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 5px var(--p2-color)); } 50% { transform: scale(1.1); filter: drop-shadow(0 0 15px var(--p2-color)); } }
+        @keyframes pulse-p3 { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 5px var(--p3-color)); } 50% { transform: scale(1.1); filter: drop-shadow(0 0 15px var(--p3-color)); } }
+        .player-card.p1.active .p-avatar { animation: pulse-p1 2s infinite ease-in-out; }
+        .player-card.p2.active .p-avatar { animation: pulse-p2 2s infinite ease-in-out; }
+        .player-card.p3.active .p-avatar { animation: pulse-p3 2s infinite ease-in-out; }
+
+        .p-avatar { font-size: 2.4rem; line-height: 1; cursor: pointer; transition: 0.2s; }
+        .score-display { font-family: 'Share Tech Mono', monospace; font-size: 1.1rem; background: rgba(0,0,0,0.5); padding: 2px 8px; border-radius: 6px; color: var(--sys-gold); border: 1px solid var(--sys-gold); box-shadow: 0 0 10px rgba(255, 200, 0, 0.2); }
+        .player-inv { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; min-height: 32px; width: 100%; }
+        .inv-icon { position: relative; width: 32px; height: 32px; background: #0d161a; border: 1px solid var(--border); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 1rem; cursor: pointer; transition: 0.2s; }
+        .inv-icon:active { transform: scale(1.15); border-color: var(--sys-cyan); box-shadow: 0 0 10px var(--sys-cyan); }
+        .inv-badge { position: absolute; bottom: -4px; right: -4px; background: var(--sys-gold); color: #000; font-size: 0.5rem; font-weight: 900; padding: 1px 3px; border-radius: 4px; border: 1px solid #000; line-height: 1;}
+        .player-xp-container { width: 100%; margin-top: 2px; }
+        .player-xp-bar { width: 100%; height: 8px; background: rgba(0,0,0,0.6); border-radius: 4px; border: 1px solid var(--border); position: relative; overflow: hidden; }
+        .player-xp-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--sys-cyan) 0%, var(--sys-green) 50%, var(--sys-gold) 100%); box-shadow: 0 0 10px var(--sys-green); transition: 0.5s ease; border-radius: 4px; }
+
+        .drum-wrapper { position: relative; width: 100%; max-width: 420px; height: 100%; background: var(--panel); border-radius: 24px; border: 2px solid var(--border); overflow: hidden; display: flex; flex-direction: column; align-items: center; box-shadow: 0 0 40px rgba(0,0,0,0.5); }
+        .drum-track { display: flex; flex-direction: column; align-items: center; position: absolute; top: 0; left: 0; width: 100%; will-change: transform; }
+        .drum-card { flex: 0 0 auto; width: 360px; height: 85px; margin: 5px 0; background: var(--card); border-radius: 14px; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; padding: 10px 15px; gap: 12px; transition: 0.3s; position: relative; z-index: 5; }
+        .drum-card.winner { background: #2b3d47; transform: scale(1.05); z-index: 10; opacity: 1 !important; border-color: var(--sys-cyan); box-shadow: 0 0 30px rgba(0, 229, 255, 0.6); }
+        .drum-emoji { font-size: 2.2rem; line-height: 1; transition: transform 0.3s; }
+        .drum-card.winner .drum-emoji { transform: scale(1.1); }
+        .drum-label { font-size: 1.1rem; font-weight: 900; color: #e2e8f0; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        @keyframes blink-gold { 0%, 100% { border-color: var(--border); } 50% { border-color: var(--sys-gold); box-shadow: 0 0 40px var(--sys-gold); } }
+        @keyframes blink-blue { 0%, 100% { border-color: var(--border); } 50% { border-color: var(--sys-cyan); box-shadow: 0 0 40px var(--sys-cyan); } }
+        @keyframes blink-flash { 0%, 100% { border-color: var(--border); opacity: 0.8; } 50% { border-color: #fff; box-shadow: 0 0 50px #fff, inset 0 0 20px #fff; opacity: 1;} }
+        .blink-effect { animation-duration: 0.3s; animation-iteration-count: infinite; animation-timing-function: ease-in-out; }
+        .blink-gold { animation-name: blink-gold; } .blink-blue { animation-name: blink-blue; } .blink-flash { animation-name: blink-flash; }
+
+        .drum-shadow { position: absolute; left: 0; width: 100%; height: 60px; pointer-events: none; z-index: 6; }
+        .drum-shadow.top { top: 0; background: linear-gradient(to bottom, var(--panel) 0%, transparent 100%); }
+        .drum-shadow.bottom { bottom: 0; background: linear-gradient(to top, var(--panel) 0%, transparent 100%); }
+
+        .center-spin-btn { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            width: 360px; height: 85px; cursor: pointer; z-index: 8; 
+            display: flex; align-items: center; justify-content: center; 
+            transition: all 0.1s cubic-bezier(0.34,1.56,0.64,1);
+            font-weight: 900; letter-spacing: 2px; border: none;
+        }
+        .center-spin-btn.hidden { opacity: 0; transform: translate(-50%, -50%) scale(0.8); pointer-events: none; }
+
+        /* СТИЛИ КНОПОК */
+        .style-1 { background: linear-gradient(180deg, #3e4c59 0%, #1f2933 100%); border: 2px solid #52606d; border-bottom: 8px solid #111; border-radius: 12px; color: #9aa5b1; font-size: 1.6rem; text-shadow: 0 1px 0 #000; box-shadow: inset 0 2px 4px rgba(255,255,255,0.1), 0 6px 10px rgba(0,0,0,0.6); }
+        .style-1::after { content: ''; position: absolute; top: 12px; right: 15px; width: 8px; height: 8px; border-radius: 50%; background: var(--sys-green); box-shadow: 0 0 10px var(--sys-green); transition: all 0.1s; }
+        .style-1:active { border-bottom: 2px solid #111; background: #1a2228; transform: translate(-50%, -46%) !important; box-shadow: 0 0 0 transparent; color: #9aa5b1; }
+        .style-1:active::after { background: #2b3d47; box-shadow: none; }
+
+        .style-2 { background: var(--sys-green); border-bottom: 8px solid var(--sys-green-dark); border-radius: 16px; color: #fff; font-size: 2.2rem; letter-spacing: 3px; -webkit-text-stroke: 2px var(--sys-green-dark); text-shadow: 0 3px 0 var(--sys-green-dark); box-shadow: 0 10px 20px rgba(0,0,0,0.5), inset 0 -4px 0 rgba(0,0,0,0.2); }
+        .style-2 .btn-text { display: inline-block; transition: transform 0.1s; }
+        .style-2:active { transform: translate(-50%, -46%) !important; border-bottom: 2px solid var(--sys-green-dark); box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+        .style-2:active .btn-text { transform: translateY(4px) scale(0.95); }
+
+        .style-3 { background: radial-gradient(ellipse at top, rgba(0,255,65,0.08) 0%, transparent 60%), #020502; border: 2px solid #00ff41; border-radius: 4px; color: #00ff41; font-family: 'Share Tech Mono', monospace; font-size: 1.6rem; letter-spacing: 1px; text-shadow: 0 0 10px #00ff41; box-shadow: 0 4px 0 #003300, inset 0 0 20px rgba(0,255,65,0.1); justify-content: flex-start; padding-left: 15px; overflow: hidden; }
+        .style-3:active { transform: translate(-50%, -47%) !important; box-shadow: 0 0 0 #003300, inset 0 0 30px rgba(0,255,65,0.4); border-color: #fff; }
+        .term-cursor { animation: blink 1s step-end infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+        .style-4 { background: repeating-linear-gradient(0deg, transparent 0, transparent 2px, rgba(255,0,0,0.08) 2px, rgba(255,0,0,0.08) 3px), repeating-linear-gradient(90deg, transparent 0, transparent 3px, rgba(0,229,255,0.08) 3px, rgba(0,229,255,0.08) 4px), repeating-linear-gradient(45deg, transparent 0, transparent 4px, rgba(255,255,255,0.03) 4px, rgba(255,255,255,0.03) 5px), #0a0505; border: 3px solid var(--sys-purple); color: #fff; font-family: 'Share Tech Mono', monospace; font-size: 1.6rem; letter-spacing: 2px; text-shadow: 2px 0 var(--sys-red), -2px 0 var(--sys-cyan); animation: border-cycler 0.5s infinite alternate; }
+        @keyframes border-cycler { 0% { border-color: var(--sys-purple); box-shadow: 0 0 10px var(--sys-purple); } 33% { border-color: var(--sys-cyan); box-shadow: 0 0 10px var(--sys-cyan); } 66% { border-color: var(--sys-red); box-shadow: 0 0 10px var(--sys-red); } 100% { border-color: var(--sys-gold); box-shadow: 0 0 10px var(--sys-gold); } }
+        .style-4.spin-glitch { animation: glitch-anim 0.15s linear infinite, border-cycler 0.1s infinite alternate; background: #111; border-color: #fff; }
+        @keyframes glitch-anim { 0% { transform: translate(-50%, -50%); text-shadow: 2px 0 var(--sys-red), -2px 0 var(--sys-cyan); } 20% { transform: translate(calc(-50% - 3px), calc(-50% + 2px)); text-shadow: -2px 0 var(--sys-red), 2px 0 var(--sys-cyan); } 40% { transform: translate(calc(-50% - 3px), calc(-50% - 2px)); text-shadow: 2px 0 var(--sys-cyan), -2px 0 var(--sys-red); } 60% { transform: translate(calc(-50% + 3px), calc(-50% + 2px)); text-shadow: -2px 0 var(--sys-cyan), 2px 0 var(--sys-red); } 80% { transform: translate(calc(-50% + 3px), calc(-50% - 2px)); text-shadow: 2px 0 var(--sys-red), -2px 0 var(--sys-cyan); } 100% { transform: translate(-50%, -50%); text-shadow: 2px 0 var(--sys-red), -2px 0 var(--sys-cyan); } }
+
+        .style-5 { background: repeating-linear-gradient(0deg, transparent 0, transparent 2px, rgba(0,229,255,0.06) 2px, rgba(0,229,255,0.06) 3px), #000; color: #fff; font-family: 'Share Tech Mono', monospace; font-size: 1.2rem; justify-content: flex-start; padding-left: 15px; border-radius: 8px; overflow: hidden; border: 2px solid #444; border-left: 6px solid var(--sys-cyan); }
+        .style-5::before { content: attr(data-boot); color: var(--sys-cyan); margin-right: 10px; font-weight: bold; font-size: 1.3rem; }
+        .boot-progress-bg { position: absolute; bottom: 0; left: 0; height: 4px; width: 100%; background: #222; }
+        .boot-progress-fill { height: 100%; width: 0%; background: var(--sys-cyan); box-shadow: 0 0 10px var(--sys-cyan); transition: width 0.3s; }
+
+        /* МОДАЛЬНЫЕ ОКНА */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(10,15,20,0.9); backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 100; opacity: 0; pointer-events: none; transition: 0.3s; }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal { background: var(--panel); border: 2px solid var(--sys-cyan); border-radius: 20px; padding: 25px 20px; max-width: 400px; width: 100%; text-align: center; box-shadow: 0 0 50px rgba(0, 229, 255, 0.2); display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative;}
+        
+        .modal-overlay.active .modal.pop-spring { animation: modal-spring 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+        .modal-overlay.active .modal.pop-slide { animation: modal-slide 0.4s ease-out forwards; }
+        .modal-overlay.active .modal.pop-flip { animation: modal-flip 0.5s ease-out forwards; }
+        @keyframes modal-spring { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes modal-slide { 0% { transform: translateY(50px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+        @keyframes modal-flip { 0% { transform: perspective(400px) rotateX(90deg); opacity: 0; } 100% { transform: perspective(400px) rotateX(0); opacity: 1; } }
+        
+        @keyframes pulse-border { 0%, 100% { box-shadow: 0 0 20px rgba(0, 229, 255, 0.2); border-color: var(--sys-cyan); } 50% { box-shadow: 0 0 40px rgba(0, 229, 255, 0.8), inset 0 0 20px rgba(0, 229, 255, 0.3); border-color: #fff; } }
+        .modal.in-progress-mode { animation: pulse-border 1.5s infinite ease-in-out !important; }
+        
+        .modal-close-x { position: absolute; top: 10px; right: 15px; font-size: 1.8rem; color: #78909c; cursor: pointer; transition: 0.2s; line-height: 1; }
+        .modal-close-x:hover { color: #fff; }
+        .modal-emoji { font-size: 4.5rem; margin-bottom: 5px; display: block; filter: drop-shadow(0 0 15px rgba(255,255,255,0.3)); }
+        .modal-task-name { font-family: 'Nunito', sans-serif; font-size: 1.8rem; font-weight: 900; color: #fff; text-shadow: 0 0 15px var(--sys-cyan); text-transform: uppercase; margin-bottom: 10px; line-height: 1.1; }
+        .modal-desc { font-size: 1rem; color: #b0bec5; margin-bottom: 20px; line-height: 1.5; font-weight: 700; }
+        .xp-badge { display: inline-block; background: rgba(255,200,0,0.1); color: var(--sys-gold); padding: 6px 12px; border-radius: 8px; font-family: 'Share Tech Mono', monospace; font-weight: 900; margin-top: 10px; border: 1px solid var(--sys-gold); }
+        .action-btns { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+        .btn { border: none; border-radius: 12px; font-weight: 900; cursor: pointer; text-transform: uppercase; transition: 0.1s; width: 100%; padding: 14px; font-size: 1rem; font-family: 'Nunito', sans-serif; letter-spacing: 1px;}
+        .btn-accept { background: var(--sys-green); border-bottom: 4px solid var(--sys-green-dark); color: #fff; }
+        .btn-accept:active { transform: translateY(4px); border-bottom: 0; }
+        .btn-accept:disabled { background: #2b3d47; border-bottom-color: #131f24; color: #78909c; cursor: not-allowed; }
+        .btn-finish { background: var(--sys-cyan); border-bottom: 4px solid #0099aa; color: #000; display: none; }
+        .btn-finish:active { transform: translateY(4px); border-bottom: 0; }
+        .btn-close { background: transparent; border: 1px solid #2b3d47; color: #78909c; font-size: 0.9rem; padding: 10px; }
+        .btn-close:active { background: #131f24; color: #fff; border-color: var(--sys-cyan); }
+        
+        .cat-modal { border-color: var(--p1-color); box-shadow: 0 0 50px rgba(255, 75, 75, 0.2); }
+        .cat-title { color: var(--p1-color); font-family: 'Nunito', sans-serif; font-size: 2rem; font-weight: 900; text-transform: uppercase; margin-bottom: 10px; }
+        .shield-modal { border-color: var(--sys-cyan); }
+        .shield-title { color: var(--sys-cyan); font-family: 'Nunito', sans-serif; font-size: 2rem; font-weight: 900; text-transform: uppercase; margin-bottom: 10px; }
+        
+        .lucky-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; margin-bottom: 15px; width: 100%; }
+        .lucky-btn { background: #0d161a; border: 1px solid #2b3d47; color: #fff; padding: 10px 5px; border-radius: 8px; font-size: 0.8rem; font-weight: 800; cursor: pointer; transition: 0.2s; }
+        .lucky-btn:active { background: var(--sys-cyan); color: #000; }
+        .qr-image { width: 180px; height: 180px; margin: 10px auto; border: 4px solid #fff; border-radius: 12px; }
+
+        /* НАСТРОЙКИ */
+        .settings-modal { max-width: 700px !important; border-color: var(--sys-gold); box-shadow: 0 0 50px rgba(255,200,0,0.2) !important;}
+        .settings-title { font-family: 'Nunito', font-size: 1.5rem; font-weight: 900; color: var(--sys-gold); margin-bottom: 20px; text-transform: uppercase;}
+        .style-selector-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; margin-bottom: 20px;}
+        .style-option { background: #0d161a; border: 2px solid var(--border); border-radius: 12px; padding: 15px; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; align-items: center; gap: 10px;}
+        .style-option:hover { border-color: var(--sys-cyan); box-shadow: 0 0 15px rgba(0, 229, 255, 0.2); }
+        .style-option.active-style { border-color: var(--sys-green); box-shadow: 0 0 15px rgba(88, 204, 2, 0.4); }
+        .style-option span { font-weight: 800; color: #b0bec5; font-size: 0.9rem; }
+        
+        .preview-mini { width: 140px; height: 45px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.8rem; pointer-events: none; border-radius: 6px;}
+        .preview-1 { background: linear-gradient(180deg, #3e4c59 0%, #1f2933 100%); border-bottom: 3px solid #111; color: #9aa5b1; }
+        .preview-2 { background: var(--sys-green); border-bottom: 3px solid var(--sys-green-dark); color: #fff; }
+        .preview-3 { background: radial-gradient(ellipse at top, rgba(0,255,65,0.1) 0%, transparent 60%), #020502; border: 1px solid #00ff41; color: #00ff41; justify-content: flex-start; padding-left: 5px; font-family: 'Share Tech Mono'; }
+        .preview-4 { background: repeating-linear-gradient(0deg, transparent 0, transparent 2px, rgba(255,0,0,0.1) 2px, rgba(255,0,0,0.1) 3px), repeating-linear-gradient(90deg, transparent 0, transparent 3px, rgba(0,229,255,0.1) 3px, rgba(0,229,255,0.1) 4px), #0a0505; border: 1px solid var(--sys-purple); color: #fff; font-family: 'Share Tech Mono'; }
+        .preview-5 { background: repeating-linear-gradient(0deg, transparent 0, transparent 2px, rgba(0,229,255,0.08) 2px, rgba(0,229,255,0.08) 3px), #000; border: 1px solid #444; border-left: 3px solid var(--sys-cyan); color: #fff; justify-content: flex-start; padding-left: 5px; font-family: 'Share Tech Mono'; }
+
+        @media (min-width: 1200px) {
+            .game-layout { display: grid; grid-template-columns: 260px 420px 290px; justify-content: center; align-items: stretch; gap: 30px; width: 100%; height: 520px; margin: 0 auto; }
+            .player-switch { grid-column: 1; flex-direction: column; width: 100%; justify-content: space-between; }
+            .player-card { flex: none; width: 100%; padding: 15px; height: calc(33.3% - 10px); }
+            .drum-wrapper { grid-column: 2; width: 100%; height: 100%; }
+            .right-panel { display: flex; grid-column: 3; width: 100%; height: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="matrixCanvas"></canvas>
+    
+    <div class="top-controls">
+        <div class="icon-btn" onclick="openSettings()" title="Settings (H)">⚙️</div>
+        <div class="icon-btn" id="soundToggle" onclick="toggleSound()" title="Sound (S)">🔊</div>
+    </div>
+
+    <h1>D . E . T</h1>
+
+    <div class="game-layout">
+        <div class="player-switch">
+            <div class="player-card p1 active" id="cardP1" onclick="switchPlayer(1)">
+                <div class="player-content">
+                    <span class="p-avatar" onclick="showQR(event, 1)" title="Link Profile">🦉</span>
+                    <span class="score-display" id="scoreP1">0</span>
+                </div>
+                <div class="player-inv" id="inv1"></div>
+                <div class="player-xp-container"><div class="player-xp-bar"><div class="player-xp-fill" id="xpFill1"></div></div></div>
+            </div>
+            <div class="player-card p2" id="cardP2" onclick="switchPlayer(2)">
+                <div class="player-content">
+                    <span class="p-avatar" onclick="showQR(event, 2)" title="Link Profile">🦊</span>
+                    <span class="score-display" id="scoreP2">0</span>
+                </div>
+                <div class="player-inv" id="inv2"></div>
+                <div class="player-xp-container"><div class="player-xp-bar"><div class="player-xp-fill" id="xpFill2"></div></div></div>
+            </div>
+            <div class="player-card p3" id="cardP3" onclick="switchPlayer(3)">
+                <div class="player-content">
+                    <span class="p-avatar" onclick="showQR(event, 3)" title="Link Profile">🐼</span>
+                    <span class="score-display" id="scoreP3">0</span>
+                </div>
+                <div class="player-inv" id="inv3"></div>
+                <div class="player-xp-container"><div class="player-xp-bar"><div class="player-xp-fill" id="xpFill3"></div></div></div>
+            </div>
+        </div>
+
+        <div class="drum-wrapper" id="drumWrapper">
+            <div class="drum-shadow top"></div>
+            <div class="drum-track" id="drumTrack"></div>
+            <div class="drum-shadow bottom"></div>
+            <button class="center-spin-btn style-1" id="spinBtn" data-boot="[ ]">PRESS</button>
+        </div>
+
+        <div class="right-panel">
+            <div class="dashboard p1-active" id="dashboardPanel">
+                <div class="skills-grid" id="skillsGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- НАСТРОЙКИ -->
+    <div class="modal-overlay" id="settingsOverlay">
+        <div class="modal settings-modal pop-spring">
+            <div class="modal-close-x" onclick="closeSettings()">×</div>
+            <h2 class="settings-title">Выбери дизайн кнопки</h2>
+            <div class="style-selector-grid">
+                <div class="style-option" id="opt-style-1" onclick="setBtnStyle('style-1')">
+                    <div class="preview-mini preview-1">PRESS</div><span>1. Mechanical</span>
+                </div>
+                <div class="style-option" id="opt-style-2" onclick="setBtnStyle('style-2')">
+                    <div class="preview-mini preview-2">ENTER</div><span>2. Duo Classic</span>
+                </div>
+                <div class="style-option" id="opt-style-3" onclick="setBtnStyle('style-3')">
+                    <div class="preview-mini preview-3">&gt; ENTER</div><span>3. CLI Terminal</span>
+                </div>
+                <div class="style-option" id="opt-style-4" onclick="setBtnStyle('style-4')">
+                    <div class="preview-mini preview-4">SYS.ERR</div><span>4. Glitch</span>
+                </div>
+                <div class="style-option" id="opt-style-5" onclick="setBtnStyle('style-5')">
+                    <div class="preview-mini preview-5">[ ] BOOT</div><span>5. BIOS Boot</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ОСТАЛЬНЫЕ МОДАЛКИ -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal" id="mainModal">
+            <span class="modal-emoji" id="modalEmoji">🎯</span>
+            <div class="modal-task-name" id="modalTaskName">Task Name</div>
+            <div id="taskStateDesc" style="width: 100%;"><p class="modal-desc" id="modalDesc">Description</p></div>
+            <div id="taskStateProgress" style="display: none; width: 100%; margin-bottom: 20px;">
+                <p class="modal-desc" style="color: var(--sys-cyan); font-family: 'Share Tech Mono', monospace; animation: blink 1s infinite;">[ TASK IN PROGRESS... ]</p>
+            </div>
+            <div class="action-btns">
+                <button class="btn btn-accept" id="btnAccept">START TASK</button>
+                <button class="btn btn-finish" id="btnFinish">I FINISHED IT!</button>
+                <button class="btn btn-close" id="btnClose">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="qrOverlay">
+        <div class="modal" id="qrModal" style="border-color: var(--sys-cyan);">
+            <div class="modal-close-x" onclick="document.getElementById('qrOverlay').classList.remove('active')">×</div>
+            <h2 class="modal-title" style="color: var(--sys-cyan);">LINK_PROFILE</h2>
+            <p class="modal-desc">Scan this QR code to link account to Player <span id="qrPlayerId">1</span>.</p>
+            <img src="" id="qrImage" class="qr-image" alt="QR Code">
+            <button class="btn btn-accept" onclick="document.getElementById('qrOverlay').classList.remove('active')">Done</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="rewardOverlay">
+        <div class="modal" id="rewardModal">
+            <div class="modal-close-x" onclick="closeCardModal()">×</div>
+            <span class="modal-emoji" id="rewardEmoji">🎁</span>
+            <h2 class="modal-title" id="rewardTitle">BONUS</h2>
+            <p class="modal-desc" id="rewardDesc">Show this to your parents!</p>
+            <button class="btn btn-accept" id="btnClaimReward">CLAIM REWARD</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="luckyOverlay">
+        <div class="modal" id="luckyModal">
+            <div class="modal-close-x" onclick="closeCardModal()">×</div>
+            <span class="modal-emoji">🍀</span>
+            <h2 class="modal-title">LUCKY BREAK</h2>
+            <p class="modal-desc">Choose any skill:</p>
+            <div class="lucky-grid" id="luckyGrid"></div>
+            <button class="btn btn-close" onclick="closeCardModal()">Cancel</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="catOverlay">
+        <div class="modal cat-modal" id="catModal">
+            <span class="modal-emoji">🐈‍⬛</span>
+            <h2 class="modal-title cat-title">CAT IN A BAG</h2>
+            <p class="modal-desc" id="catDesc">The cat stole your reward!</p>
+            <button class="btn btn-close" onclick="document.getElementById('catOverlay').classList.remove('active')" style="border-color:var(--p1-color); color:var(--p1-color);">Dismiss</button>
+        </div>
+    </div>
+    
+    <div class="modal-overlay" id="shieldOverlay">
+        <div class="modal shield-modal" id="shieldModal">
+            <span class="modal-emoji">🛡️</span>
+            <h2 class="modal-title shield-title">SHIELD ACTIVATED</h2>
+            <p class="modal-desc">The Cat tried to steal your reward, but your Shield blocked it!</p>
+            <button class="btn btn-accept" onclick="document.getElementById('shieldOverlay').classList.remove('active')">Awesome</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="masterOverlay">
+        <div class="modal" id="masterModal" style="border-color: var(--sys-gold); box-shadow: 0 0 50px rgba(255, 200, 0, 0.4);">
+            <span class="modal-emoji">🏆</span>
+            <h2 class="modal-title" style="color: var(--sys-gold);">SKILL MASTERED!</h2>
+            <p class="modal-desc" id="masterDesc">You completed all 6 levels!<br><br><span class="xp-badge" style="color:var(--sys-gold); border-color:var(--sys-gold);">+1000 XP BONUS</span></p>
+            <button class="btn btn-accept" onclick="document.getElementById('masterOverlay').classList.remove('active')">Awesome!</button>
+        </div>
+    </div>
+
+<script>
+    // 1. ФОН
+    const canvas = document.getElementById('matrixCanvas'), ctx = canvas.getContext('2d');
+    const chars = '01ABCDEFGHIJKLMNOPQRSTUVWXYZ'; const fontSize = 14; let w, h, columns, drops = [];
+    function resizeCanvas() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; columns = Math.floor(w / fontSize); drops = Array(columns).fill(0).map(() => Math.random() * h); }
+    resizeCanvas(); window.addEventListener('resize', resizeCanvas);
+    setInterval(() => { ctx.fillStyle = 'rgba(10, 15, 20, 0.1)'; ctx.fillRect(0, 0, w, h); ctx.fillStyle = 'rgba(0, 229, 255, 0.4)'; ctx.font = fontSize + 'px "Share Tech Mono", monospace'; for (let i = 0; i < drops.length; i++) { ctx.fillText(chars[Math.floor(Math.random() * chars.length)], i * fontSize, drops[i] * fontSize); if (drops[i] * fontSize > h && Math.random() > 0.98) drops[i] = 0; drops[i] += 0.4; } }, 100);
+
+    // 2. АУДИО
+    let audioCtx, isMuted = false, tickCount = 0;
+    function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
+    window.toggleSound = () => { isMuted = !isMuted; document.getElementById('soundToggle').textContent = isMuted ? '🔇' : '🔊'; };
+    function playTick() { if (isMuted || !audioCtx) return; tickCount = (tickCount + 1) % 3; const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); if (tickCount === 0) { o.type = 'square'; o.frequency.setValueAtTime(800, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.05); } else if (tickCount === 1) { o.type = 'sine'; o.frequency.setValueAtTime(1200, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.05); } else { o.type = 'triangle'; o.frequency.setValueAtTime(600, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.05); } g.gain.setValueAtTime(0.05, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05); o.start(); o.stop(audioCtx.currentTime + 0.05); }
+    function playClick() { if (isMuted || !audioCtx) return; const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sine'; o.frequency.setValueAtTime(600, audioCtx.currentTime); g.gain.setValueAtTime(0.1, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1); o.start(); o.stop(audioCtx.currentTime + 0.1); }
+    function playStart() { if (isMuted || !audioCtx) return; const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sawtooth'; o.frequency.setValueAtTime(100, audioCtx.currentTime); o.frequency.linearRampToValueAtTime(400, audioCtx.currentTime + 0.3); g.gain.setValueAtTime(0.1, audioCtx.currentTime); g.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3); o.start(); o.stop(audioCtx.currentTime + 0.3); }
+    function playWin(theme) { if (isMuted || !audioCtx) return; let notes; if (theme === 'gold') notes = [523.25, 659.25, 783.99, 1046.50]; else if (theme === 'blue') notes = [587.33, 739.99, 880.00, 1174.66]; else if (theme === 'purple') notes = [440.00, 523.25, 659.25, 880.00]; else if (theme === 'retro') notes = [330, 440, 554, 660]; else if (theme === 'scifi') notes = [880, 1100, 1320, 1760]; else if (theme === 'chime') notes = [1046, 1318, 1568, 2093]; else notes = [392.00, 493.88, 587.33, 783.99]; notes.forEach((freq, i) => { const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sine'; o.frequency.value = freq; g.gain.setValueAtTime(0, audioCtx.currentTime + i * 0.08); g.gain.linearRampToValueAtTime(0.15, audioCtx.currentTime + i * 0.08 + 0.05); g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.08 + 0.4); o.start(audioCtx.currentTime + i * 0.08); o.stop(audioCtx.currentTime + i * 0.08 + 0.4); }); }
+
+    // 3. ДАННЫЕ
+    const skills = [
+        { id:'read_select', l:'Read Select', e:'👁️', d:'Select real English words.', value: 200 }, { id:'fill_blanks', l:'Fill Blanks', e:'✍️', d:'Complete the text.', value: 200 }, { id:'listen_type', l:'Listen & Type', e:'🎧', d:'Listen and transcribe.', value: 200 }, { id:'read_complete', l:'Read Complete', e:'📄', d:'Type missing letters.', value: 200 },
+        { id:'int_reading', l:'Int. Reading', e:'💬', d:'Complete the dialogue.', value: 300 }, { id:'int_listening', l:'Int. Listening', e:'👂', d:'Answer the audio.', value: 300 }, { id:'read_speak', l:'Read & Speak', e:'📖', d:'Read and retell.', value: 300 }, { id:'int_writing', l:'Int. Writing', e:'⌨️', d:'Write a dialogue.', value: 300 },
+        { id:'write_photo', l:'Write Photo', e:'🖼️', d:'Describe the image.', value: 500 }, { id:'speak_photo', l:'Speak Photo', e:'🗣️', d:'Talk about the image.', value: 500 }, { id:'int_speaking', l:'Int. Speaking', e:'🤝', d:'Talk with a bot.', value: 500 }, { id:'speaking_sample', l:'Speak Sample', e:'🎙️', d:'Give a detailed answer.', value: 500 },
+        { id:'writing_sample', l:'Write Sample', e:'📝', d:'Write a short essay.', value: 1000 }
+    ];
+    const bonuses = [
+        { label:'GAME TIME', l:'Game Time', e:'🎮', d:'15 minutes of game or cartoons!' }, { label:'SNACK TIME', l:'Snack Time', e:'🍿', d:'Time for a tasty snack!' }, { label:'ART BREAK', l:'Art Break', e:'🎨', d:'5 mins to draw or dance!' }, { label:'GOLDEN TICKET', l:'Golden Ticket', e:'🎟️', d:'WOW! Show to parents to claim your prize!' }, { label:'POWER MOVE', l:'Power Move', e:'⚡', d:'You gain +300 XP instantly!', val: 300 }, { label:'LUCKY BREAK', l:'Lucky Break', e:'🍀', d:'Choose ANY task you want!' }, { label:'SHIELD', l:'Shield', e:'🦸', d:'Protects you from the Cat in a Bag!' }
+    ];
+    const allSectors = [...skills.map(s => ({...s, type:'skill'})), ...bonuses.map(b => ({...b, type:'bonus', id:'bonus_'+b.label}))];
+    const MAX_XP = 40000;
+
+    // 4. СОСТОЯНИЕ
+    let state = { 
+        p: 1, 
+        score: {1:0, 2:0, 3:0}, 
+        prog: {1:{}, 2:{}, 3:{}}, 
+        inv: {1:[], 2:[], 3:[]},
+        btnStyles: {1: 'style-1', 2: 'style-1', 3: 'style-1'}
+    };
+    try { 
+        const s = localStorage.getItem('detGame_v20'); 
+        if (s) { 
+            const p = JSON.parse(s); 
+            state = { ...state, ...p, inv: p.inv || {1:[], 2:[], 3:[]} }; 
+            if (!state.prog || !state.prog[1]) state.prog = {1:{}, 2:{}, 3:{}};
+            if (!state.btnStyles) state.btnStyles = {1: 'style-1', 2: 'style-1', 3: 'style-1'};
+        } 
+    } catch(e){}
+    [1, 2, 3].forEach(p => { if (!state.prog[p]) state.prog[p] = {}; skills.forEach(s => { if (state.prog[p][s.id] === undefined) state.prog[p][s.id] = 0; }); });
+    const save = () => { try { localStorage.setItem('detGame_v20', JSON.stringify(state)); } catch(e){} };
+
+    const $ = id => document.getElementById(id);
+    const drumTrack = $('drumTrack'), drumWrapper = $('drumWrapper'), spinBtn = $('spinBtn');
+    const modalOverlay = $('modalOverlay'), mainModal = $('mainModal'), btnAccept = $('btnAccept'), btnFinish = $('btnFinish'), btnClose = $('btnClose');
+    const taskStateDesc = $('taskStateDesc'), taskStateProgress = $('taskStateProgress');
+    const REPEATS = 20; let curIdx = 0, isSpinning = false, winIdx = -1, lastTickY = 0, pendingCard = null;
+
+    // 5. ЛОГИКА КНОПКИ
+    let isButtonAnimating = false;
+
+    function openSettings() { $('settingsOverlay').classList.add('active'); updateStyleUI(); }
+    function closeSettings() { $('settingsOverlay').classList.remove('active'); }
+
+    function setBtnStyle(styleClass) {
+        state.btnStyles[state.p] = styleClass;
+        save();
+        applyBtnStyle();
+        closeSettings();
+        playClick();
+    }
+
+    function updateStyleUI() {
+        document.querySelectorAll('.style-option').forEach(el => el.classList.remove('active-style'));
+        const activeStyle = state.btnStyles[state.p] || 'style-1';
+        const activeOpt = document.getElementById('opt-' + activeStyle);
+        if (activeOpt) activeOpt.classList.add('active-style');
+    }
+
+    function applyBtnStyle() {
+        const styleClass = state.btnStyles[state.p] || 'style-1';
+        spinBtn.className = 'center-spin-btn ' + styleClass;
+        
+        if (styleClass === 'style-2') {
+            spinBtn.innerHTML = '<span class="btn-text">ENTER</span>';
+        } else if (styleClass === 'style-3') {
+            spinBtn.innerHTML = '<span id="cliText">&gt; ENTER</span><span class="term-cursor">_</span>';
+        } else if (styleClass === 'style-5') {
+            spinBtn.innerHTML = `<span id="bootText">BOOTING...</span><div class="boot-progress-bg"><div class="boot-progress-fill" id="bootProgress"></div></div>`;
+            spinBtn.setAttribute('data-boot', '[ ]');
+        } else if (styleClass === 'style-4') {
+            spinBtn.textContent = 'SYS.ERR';
+        } else {
+            spinBtn.textContent = 'PRESS';
+        }
+    }
+
+    function triggerBtnAnimation(callback) {
+        if (isButtonAnimating) return;
+        isButtonAnimating = true;
+        const styleClass = state.btnStyles[state.p] || 'style-1';
+
+        if (styleClass === 'style-1') { setTimeout(() => { isButtonAnimating = false; callback(); }, 400); }
+        else if (styleClass === 'style-2') { setTimeout(() => { isButtonAnimating = false; callback(); }, 400); }
+        else if (styleClass === 'style-3') {
+            const cliText = document.getElementById('cliText');
+            const commands = ["> npm run dev", "> git push origin main", "> docker-compose up -d", "> sudo apt-get update", "> ssh root@192.168.1.1"];
+            const cmd = commands[Math.floor(Math.random() * commands.length)];
+            let i = 0; cliText.textContent = "";
+            
+            const interval = setInterval(() => {
+                cliText.textContent += cmd[i]; i++;
+                if (i >= cmd.length) {
+                    clearInterval(interval);
+                    setTimeout(() => { cliText.textContent = "> ENTER"; isButtonAnimating = false; callback(); }, 600);
+                }
+            }, 30);
+        }
+        else if (styleClass === 'style-4') {
+            const chars = "!@#$%^&*()_+{}:<>?0123456789ABCDEF";
+            const errors = ["KERNEL_PANIC", "SEGFAULT", "ACCESS_DENIED", "FATAL_ERROR"];
+            spinBtn.classList.add('spin-glitch');
+            const symbolInterval = setInterval(() => { spinBtn.textContent = chars.split('').sort(() => 0.5 - Math.random()).slice(0, 9).join(''); }, 50);
+            setTimeout(() => { clearInterval(symbolInterval); spinBtn.textContent = errors[Math.floor(Math.random() * errors.length)]; }, 400);
+            setTimeout(() => { spinBtn.classList.remove('spin-glitch'); spinBtn.textContent = 'SYS.ERR'; isButtonAnimating = false; callback(); }, 600);
+        }
+        else if (styleClass === 'style-5') {
+            const bootFill = document.getElementById('bootProgress');
+            const bootText = document.getElementById('bootText');
+            spinBtn.setAttribute('data-boot', '[■]'); bootText.textContent = "LOADING SYS..."; bootFill.style.width = "33%";
+            setTimeout(() => { spinBtn.setAttribute('data-boot', '[■■]'); bootText.textContent = "CHECKING..."; bootFill.style.width = "66%"; }, 400);
+            setTimeout(() => { spinBtn.setAttribute('data-boot', '[■■■]'); bootText.textContent = "ACCESS GRANTED"; bootFill.style.width = "100%"; spinBtn.style.color = "var(--sys-cyan)"; spinBtn.style.borderColor = "var(--sys-cyan)"; }, 800);
+            setTimeout(() => { spinBtn.style.color = "#fff"; spinBtn.style.borderColor = "#444"; isButtonAnimating = false; callback(); }, 1200);
+        }
+        else { callback(); isButtonAnimating = false; }
+    }
+
+    // 6. ИГРОВАЯ ЛОГИКА
+    const getCardHeight = () => { const c = drumTrack.querySelector('.drum-card'); if (!c) return 95; const st = window.getComputedStyle(c); return c.offsetHeight + (parseFloat(st.marginTop) || 0) + (parseFloat(st.marginBottom) || 0); };
+    function renderDrum() { drumTrack.innerHTML = Array(REPEATS).fill(allSectors.map((s, i) => { const isMaxed = s.type === 'skill' && state.prog[state.p][s.id] >= 6; return `<div class="drum-card" data-i="${i}" ${isMaxed ? 'style="opacity:0.4"' : ''}><span class="drum-emoji">${s.e}</span><span class="drum-label">${s.l}</span></div>`; }).join('')).join(''); }
+    function setPos(idx, animate = false) { const h = getCardHeight(), off = -(idx * h) + (drumWrapper.clientHeight / 2 - h / 2); drumTrack.style.transition = animate ? 'transform 6s cubic-bezier(0.1, 0.9, 0.2, 1)' : 'none'; drumTrack.style.transform = `translateY(${off}px)`; document.querySelectorAll('.drum-card').forEach(c => c.classList.remove('winner', 'blink-effect', 'blink-gold', 'blink-blue', 'blink-flash')); if (drumTrack.children[idx]) drumTrack.children[idx].classList.add('winner'); }
+
+    function updateUI() {
+        $('skillsGrid').innerHTML = skills.map(s => {
+            const prog = state.prog[state.p][s.id];
+            let segs = Array(6).fill(0).map((_, i) => `<div class="skill-seg ${i < prog ? 'filled' : ''}"></div>`).join('');
+            return `<div class="skill-item ${prog >= 6 ? 'done' : ''}"><div class="skill-name"><span>${s.e}</span><span>${s.l}</span></div><div class="skill-bar">${segs}</div></div>`;
+        }).join('');
+
+        [1, 2, 3].forEach(p => {
+            $(`scoreP${p}`).textContent = state.score[p]; 
+            $(`xpFill${p}`).style.width = Math.min((state.score[p] / MAX_XP) * 100, 100) + '%'; 
+            $(`inv${p}`).innerHTML = (state.inv[p]||[]).map((c, i) => `<div class="inv-icon" onclick="useCard(event, ${p}, ${i})">${c.e}${c.val ? `<div class="inv-badge">+${c.val}</div>` : ''}</div>`).join('');
+            $(`cardP${p}`).classList.toggle('active', state.p === p);
+        });
+
+        const dash = $('dashboardPanel');
+        dash.className = `dashboard p${state.p}-active`;
+        renderDrum(); setTimeout(() => setPos(curIdx), 10);
+    }
+
+    function startTask(sector) {
+        mainModal.style.borderColor = 'var(--sys-cyan)';
+        $('modalEmoji').textContent = sector.e; 
+        $('modalTaskName').textContent = sector.l;
+        $('modalTaskName').style.color = '#fff'; $('modalTaskName').style.textShadow = '0 0 15px var(--sys-cyan)';
+        mainModal.className = 'modal in-progress-mode';
+        taskStateDesc.style.display = 'none'; taskStateProgress.style.display = 'block'; btnAccept.style.display = 'none'; btnFinish.style.display = 'block'; btnClose.textContent = 'Abort Task';
+        modalOverlay.classList.add('active');
+    }
+
+    window.switchPlayer = p => { 
+        if(p>=1 && p<=3){ 
+            playClick(); 
+            state.p = p; 
+            save(); 
+            updateUI(); 
+            applyBtnStyle(); // Обновляем кнопку под текущего игрока
+        } 
+    };
+    window.showQR = (e, pId) => { e.stopPropagation(); playClick(); $('qrPlayerId').textContent = pId; $('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`https://englishtest.duolingo.com/profile/player${pId}`)}&color=131f24&bgcolor=ffffff`; $('qrModal').className = 'modal pop-spring'; $('qrOverlay').classList.add('active'); };
+
+    window.useCard = (e, pId, idx) => {
+        e.stopPropagation(); playClick(); if (state.p !== pId) return alert("Not your turn!");
+        const card = state.inv[pId][idx]; if (card.label === 'SHIELD') return alert("Shield is passive!");
+        pendingCard = { pId, idx, card };
+        if (card.label === 'LUCKY BREAK') { 
+            $('luckyGrid').innerHTML = skills.map(s => `<button class="lucky-btn" ${state.prog[state.p][s.id]>=6?'disabled':''} onclick="pickLucky('${s.id}')">${s.e} ${s.l} (${state.prog[state.p][s.id]}/6)</button>`).join(''); 
+            $('luckyModal').className = 'modal pop-flip'; $('luckyOverlay').classList.add('active'); 
+        } else { 
+            $('rewardEmoji').textContent = card.e; $('rewardTitle').textContent = card.label; $('rewardDesc').textContent = card.d; 
+            $('rewardModal').className = 'modal pop-slide'; $('rewardOverlay').classList.add('active'); playWin('gold'); 
+        }
+    };
+
+    window.closeCardModal = () => { $('luckyOverlay').classList.remove('active'); $('rewardOverlay').classList.remove('active'); pendingCard = null; playClick(); };
+    window.pickLucky = (skillId) => { if (!pendingCard) return; const pId = pendingCard.pId; const s = skills.find(x => x.id === skillId); state.inv[pId].splice(pendingCard.idx, 1); save(); updateUI(); closeCardModal(); winIdx = allSectors.findIndex(x => x.id === skillId); startTask(s); };
+    $('btnClaimReward').onclick = () => { if (!pendingCard) return; state.inv[pendingCard.pId].splice(pendingCard.idx, 1); save(); updateUI(); closeCardModal(); };
+
+    function tickLoop() { if (!isSpinning) return; const matrix = new DOMMatrixReadOnly(window.getComputedStyle(drumTrack).transform); const currentY = matrix.m42; if (Math.abs(currentY - lastTickY) >= getCardHeight() * 0.8) { playTick(); lastTickY = currentY; } requestAnimationFrame(tickLoop); }
+
+    function executeSpin() {
+        if (isSpinning) return; initAudio(); playStart();
+        isSpinning = true; spinBtn.classList.add('hidden'); winIdx = Math.floor(Math.random() * allSectors.length);
+        const curMod = curIdx % allSectors.length; let diff = winIdx - curMod; if (diff < 0) diff += allSectors.length; const targetIdx = curIdx + (5 + Math.floor(Math.random() * 3)) * allSectors.length + diff;
+        const h = getCardHeight(), startOff = -(curIdx * h) + (drumWrapper.clientHeight / 2 - h / 2);
+        drumTrack.style.transition = 'none'; drumTrack.style.transform = `translateY(${startOff}px)`; void drumTrack.offsetHeight;
+        lastTickY = new DOMMatrixReadOnly(window.getComputedStyle(drumTrack).transform).m42; requestAnimationFrame(tickLoop);
+        setPos(targetIdx, true); curIdx = targetIdx;
+
+        setTimeout(() => {
+            isSpinning = false; const winCard = drumTrack.children[curIdx]; 
+            const blinks = ['blink-gold', 'blink-blue', 'blink-flash'], chosenBlink = blinks[Math.floor(Math.random() * blinks.length)]; 
+            winCard.classList.add('blink-effect', chosenBlink);
+            if (chosenBlink === 'blink-gold') playWin('gold'); else if (chosenBlink === 'blink-blue') playWin('retro'); else playWin('chime');
+
+            setTimeout(() => {
+                winCard.classList.remove('blink-effect', ...blinks); showResult(allSectors[winIdx]);
+                setTimeout(() => { curIdx = Math.floor(REPEATS / 2) * allSectors.length + winIdx; setPos(curIdx); }, 500);
+            }, 2000);
+        }, 6100); 
+    }
+
+    spinBtn.onclick = () => {
+        initAudio();
+        triggerBtnAnimation(executeSpin);
+    };
+
+    function showResult(sector) {
+        mainModal.style.borderColor = sector.type === 'skill' ? 'var(--sys-cyan)' : 'var(--sys-gold)';
+        $('modalEmoji').textContent = sector.e; 
+        $('modalTaskName').textContent = sector.l;
+        $('modalTaskName').style.color = sector.type === 'skill' ? '#fff' : 'var(--sys-gold)';
+        $('modalTaskName').style.textShadow = sector.type === 'skill' ? '0 0 15px var(--sys-cyan)' : '0 0 15px var(--sys-gold)';
+        
+        mainModal.className = 'modal ' + ['pop-spring', 'pop-slide', 'pop-flip'][Math.floor(Math.random() * 3)];
+        taskStateDesc.style.display = 'block'; taskStateProgress.style.display = 'none'; btnFinish.style.display = 'none'; btnAccept.style.display = 'block'; btnAccept.textContent = 'START TASK'; btnAccept.disabled = false;
+        
+        if (sector.type === 'skill') {
+            const p = state.prog[state.p][sector.id]; 
+            if (p >= 6) { $('modalDesc').innerHTML = `Already maxed!`; btnAccept.disabled = true; btnAccept.textContent = 'MAXED OUT (6/6)'; }
+            else { $('modalDesc').innerHTML = `${sector.d}<br><br><span class="xp-badge">+${sector.value} XP</span>`; }
+        } else { $('modalDesc').innerHTML = `${sector.d}`; btnAccept.textContent = 'ADD TO INVENTORY'; }
+        modalOverlay.classList.add('active');
+    }
+
+    btnAccept.onclick = () => {
+        playClick(); const sector = allSectors[winIdx];
+        if (sector.type === 'bonus') {
+            let targetP = state.p, stolen = false, isBonus = sector.label !== 'POWER MOVE';
+            if (sector.label === 'POWER MOVE') { state.score[targetP] += 300; } else if (isBonus) { state.inv[targetP].push(sector); }
+            save(); updateUI(); closeModal(); return;
+        }
+        startTask(sector);
+    };
+
+    btnFinish.onclick = () => {
+        playClick(); const sector = allSectors[winIdx]; let stolen = false;
+        let baseXP = sector.value, bonusXP = 0, isMastered = false;
+        
+        if (state.prog[state.p][sector.id] < 6) { 
+            state.prog[state.p][sector.id]++; 
+            if (state.prog[state.p][sector.id] === 6) { bonusXP = 1000; isMastered = true; }
+        }
+        
+        if (Math.random() < 0.25) {
+            const shieldIdx = state.inv[state.p].findIndex(c => c.label === 'SHIELD');
+            if (shieldIdx > -1) { state.inv[state.p].splice(shieldIdx, 1); setTimeout(() => $('shieldOverlay').classList.add('active'), 300); }
+            else { stolen = true; }
+        }
+
+        if (stolen) {
+            const others = [1,2,3].filter(x => x !== state.p); const targetP = others[Math.floor(Math.random() * 2)]; 
+            state.score[targetP] += baseXP + bonusXP; 
+            $('catDesc').innerHTML = `The Cat stole your <b>+${baseXP} XP</b>!<br><br>But you keep your progress (${state.prog[state.p][sector.id]}/6).<br><br>The XP goes to <b>Player ${targetP}</b>!`; 
+            $('catModal').className = 'modal cat-modal pop-flip'; $('catOverlay').classList.add('active'); playWin('cat'); 
+        } else { state.score[state.p] += baseXP + bonusXP; }
+        
+        save(); updateUI(); closeModal();
+
+        if (isMastered) {
+            setTimeout(() => {
+                $('masterDesc').innerHTML = `You completed all 6 levels of <b>${sector.l}</b>!<br><br><span class="xp-badge" style="color:var(--sys-gold); border-color:var(--sys-gold);">+${bonusXP} XP BONUS</span>`;
+                $('masterModal').className = 'modal pop-spring'; $('masterOverlay').classList.add('active');
+            }, 800);
+        }
+    };
+
+    function closeModal() { 
+        modalOverlay.classList.remove('active'); 
+        winIdx = -1; 
+        setTimeout(() => { 
+            if (!isSpinning) {
+                applyBtnStyle(); 
+                spinBtn.classList.remove('hidden'); 
+            }
+        }, 300); 
+        playClick(); 
+    }
+    btnClose.onclick = closeModal;
+
+    // 7. КЛАВИАТУРА И НАВИГАЦИЯ
+    window.addEventListener('keydown', (e) => {
+        // H - Настройки
+        if (e.key === 'h' || e.key === 'H' || e.key === 'р' || e.key === 'Р') { 
+            if ($('settingsOverlay').classList.contains('active')) closeSettings();
+            else openSettings();
+            return; 
+        }
+        // S - Звук
+        if (e.key === 's' || e.key === 'S' || e.key === 'ы' || e.key === 'Ы') { 
+            toggleSound(); return; 
+        }
+        
+        // Стрелки - Переключение игроков
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { 
+            e.preventDefault(); 
+            if (state.p === 1) switchPlayer(2); else if (state.p === 2) switchPlayer(3); else switchPlayer(1); 
+            return; 
+        }
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { 
+            e.preventDefault(); 
+            if (state.p === 3) switchPlayer(2); else if (state.p === 2) switchPlayer(1); else switchPlayer(3); 
+            return; 
+        }
+
+        // Enter/Space - Запуск и взаимодействие
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault();
+
+        if (modalOverlay.classList.contains('active')) {
+            if (btnFinish.style.display === 'block') { btnFinish.click(); return; }
+            if (!btnAccept.disabled && btnAccept.style.display === 'block') { btnAccept.click(); return; }
+        }
+        if ($('rewardOverlay').classList.contains('active')) { $('btnClaimReward').click(); return; }
+        if ($('masterOverlay').classList.contains('active')) { document.getElementById('masterOverlay').classList.remove('active'); return; }
+        if ($('settingsOverlay').classList.contains('active')) { closeSettings(); return; }
+
+        let closedSimple = false;
+        ['qrOverlay', 'catOverlay', 'shieldOverlay'].forEach(id => { if ($(id).classList.contains('active')) { $(id).classList.remove('active'); closedSimple = true; } });
+        if (closedSimple) return;
+
+        if (!spinBtn.classList.contains('hidden') && !$('luckyOverlay').classList.contains('active') && !isButtonAnimating) {
+            triggerBtnAnimation(executeSpin); // <--- Исправлено для клавиатуры
+            return;
+        }
+    });
+
+    window.addEventListener('load', () => { 
+        applyBtnStyle();
+        updateUI(); 
+        setTimeout(() => { curIdx = Math.floor(REPEATS / 2) * allSectors.length; setPos(curIdx); }, 50); 
+        window.addEventListener('resize', () => setPos(curIdx)); 
+    });
+</script>
+</body>
+</html>

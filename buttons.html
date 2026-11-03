@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Button Previews for Sound Integration</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0f14; --panel: #131f24; --border: #2b3d47;
+            --sys-cyan: #00e5ff; --sys-green: #58cc02; --sys-green-dark: #46a302; --sys-gold: #ffc800; --sys-purple: #ce82ff; --sys-red: #ff4b4b;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--bg); color: #fff; font-family: 'Nunito', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 40px; min-height: 100vh;}
+        h1 { text-align: center; font-size: 2rem; margin-bottom: 30px; text-shadow: 0 0 10px var(--sys-cyan); }
+        
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; max-width: 900px; width: 100%; }
+        .preview-box { background: var(--panel); border: 2px solid var(--border); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 180px;}
+        .preview-box h3 { margin-bottom: 15px; font-size: 1rem; color: #b0bec5; }
+        
+        /* Базовые стили для позиционирования внутри превью */
+        .btn-container { position: relative; width: 360px; height: 85px; display: flex; align-items: center; justify-content: center; background: #1e2d35; border-radius: 14px; border: 2px solid #2b3d47;}
+
+        /* =========================================
+           КОПИЯ СТИЛЕЙ КНОПОК ИЗ ИГРЫ
+           ========================================= */
+        .center-spin-btn { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            width: 360px; height: 85px; cursor: pointer; z-index: 8; 
+            display: flex; align-items: center; justify-content: center; 
+            transition: all 0.1s cubic-bezier(0.34,1.56,0.64,1);
+            font-weight: 900; letter-spacing: 2px; border: none;
+        }
+
+        /* 1. Mechanical Key */
+        .style-1 {
+            background: linear-gradient(180deg, #3e4c59 0%, #1f2933 100%);
+            border: 2px solid #52606d; border-bottom: 8px solid #111; border-radius: 12px;
+            color: #9aa5b1; font-size: 1.6rem; text-shadow: 0 1px 0 #000;
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.1), 0 6px 10px rgba(0,0,0,0.6);
+        }
+        .style-1::after { content: ''; position: absolute; top: 12px; right: 15px; width: 8px; height: 8px; border-radius: 50%; background: var(--sys-green); box-shadow: 0 0 10px var(--sys-green); transition: all 0.1s; }
+        .style-1:active { border-bottom: 2px solid #111; background: #1a2228; transform: translate(-50%, -46%) !important; box-shadow: 0 0 0 transparent; color: #9aa5b1; }
+        .style-1:active::after { background: #2b3d47; box-shadow: none; }
+
+        /* 2. Duo Classic */
+        .style-2 {
+            background: var(--sys-green); border-bottom: 8px solid var(--sys-green-dark);
+            border-radius: 16px; color: #fff; font-size: 2.2rem; letter-spacing: 3px;
+            -webkit-text-stroke: 2px var(--sys-green-dark); text-shadow: 0 3px 0 var(--sys-green-dark);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5), inset 0 -4px 0 rgba(0,0,0,0.2);
+        }
+        .style-2 .btn-text { display: inline-block; transition: transform 0.1s; }
+        .style-2:active { transform: translate(-50%, -46%) !important; border-bottom: 2px solid var(--sys-green-dark); box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+        .style-2:active .btn-text { transform: translateY(4px) scale(0.95); }
+
+        /* 3. CLI Terminal */
+        .style-3 {
+            background: radial-gradient(ellipse at top, rgba(0,255,65,0.08) 0%, transparent 60%), #020502;
+            border: 2px solid #00ff41; border-radius: 4px;
+            color: #00ff41; font-family: 'Share Tech Mono', monospace; font-size: 1.6rem;
+            letter-spacing: 1px; text-shadow: 0 0 10px #00ff41;
+            box-shadow: 0 4px 0 #003300, inset 0 0 20px rgba(0,255,65,0.1);
+            justify-content: flex-start; padding-left: 15px; overflow: hidden;
+        }
+        .style-3:active { transform: translate(-50%, -47%) !important; box-shadow: 0 0 0 #003300, inset 0 0 30px rgba(0,255,65,0.4); border-color: #fff; }
+        .term-cursor { animation: blink 1s step-end infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+        /* 4. Glitch Matrix */
+        .style-4 {
+            background: 
+                repeating-linear-gradient(0deg, transparent 0, transparent 2px, rgba(255,0,0,0.08) 2px, rgba(255,0,0,0.08) 3px),
+                repeating-linear-gradient(90deg, transparent 0, transparent 3px, rgba(0,229,255,0.08) 3px, rgba(0,229,255,0.08) 4px),
+                repeating-linear-gradient(45deg, transparent 0, transparent 4px, rgba(255,255,255,0.03) 4px, rgba(255,255,255,0.03) 5px),
+                #0a0505;
+            border: 3px solid var(--sys-purple);
+            color: #fff; font-family: 'Share Tech Mono', monospace;
+            font-size: 1.6rem; letter-spacing: 2px; text-shadow: 2px 0 var(--sys-red), -2px 0 var(--sys-cyan);
+            animation: border-cycler 0.5s infinite alternate;
+        }
+        @keyframes border-cycler {
+            0% { border-color: var(--sys-purple); box-shadow: 0 0 10px var(--sys-purple); }
+            33% { border-color: var(--sys-cyan); box-shadow: 0 0 10px var(--sys-cyan); }
+            66% { border-color: var(--sys-red); box-shadow: 0 0 10px var(--sys-red); }
+            100% { border-color: var(--sys-gold); box-shadow: 0 0 10px var(--sys-gold); }
+        }
+        .style-4.spin-glitch { animation: glitch-anim 0.15s linear infinite, border-cycler 0.1s infinite alternate; background: #111; border-color: #fff;}
+        @keyframes glitch-anim {
+            0% { transform: translate(-50%, -50%); text-shadow: 2px 0 var(--sys-red), -2px 0 var(--sys-cyan); }
+            20% { transform: translate(calc(-50% - 3px), calc(-50% + 2px)); text-shadow: -2px 0 var(--sys-red), 2px 0 var(--sys-cyan); }
+            40% { transform: translate(calc(-50% - 3px), calc(-50% - 2px)); text-shadow: 2px 0 var(--sys-cyan), -2px 0 var(--sys-red); }
+            60% { transform: translate(calc(-50% + 3px), calc(-50% + 2px)); text-shadow: -2px 0 var(--sys-cyan), 2px 0 var(--sys-red); }
+            80% { transform: translate(calc(-50% + 3px), calc(-50% - 2px)); text-shadow: 2px 0 var(--sys-red), -2px 0 var(--sys-cyan); }
+            100% { transform: translate(-50%, -50%); text-shadow: 2px 0 var(--sys-red), -2px 0 var(--sys-cyan); }
+        }
+
+        /* 5. BIOS Boot */
+        .style-5 {
+            background: repeating-linear-gradient(0deg, transparent 0, transparent 2px, rgba(0,229,255,0.06) 2px, rgba(0,229,255,0.06) 3px), #000;
+            color: #fff; font-family: 'Share Tech Mono', monospace; font-size: 1.2rem;
+            justify-content: flex-start; padding-left: 15px; border-radius: 8px; overflow: hidden;
+            border: 2px solid #444; border-left: 6px solid var(--sys-cyan);
+        }
+        .style-5::before { content: attr(data-boot); color: var(--sys-cyan); margin-right: 10px; font-weight: bold; font-size: 1.3rem; }
+        .boot-progress-bg { position: absolute; bottom: 0; left: 0; height: 4px; width: 100%; background: #222; }
+        .boot-progress-fill { height: 100%; width: 0%; background: var(--sys-cyan); box-shadow: 0 0 10px var(--sys-cyan); transition: width 0.3s; }
+
+    </style>
+</head>
+<body>
+    <h1>Button Animations (Test for Sounds)</h1>
+    <div class="grid" id="grid"></div>
+
+    <script>
+        const buttonsData = [
+            { id: 1, label: 'Mechanical', html: 'PRESS' },
+            { id: 2, label: 'Duo Classic', html: '<span class="btn-text">ENTER</span>' },
+            { id: 3, label: 'CLI Terminal', html: '<span id="cliText">&gt; ENTER</span><span class="term-cursor">_</span>' },
+            { id: 4, label: 'Glitch', html: 'SYS.ERR' },
+            { id: 5, label: 'BIOS Boot', html: '<span id="bootText">BOOTING...</span><div class="boot-progress-bg"><div class="boot-progress-fill" id="bootProgress"></div></div>' }
+        ];
+
+        const grid = document.getElementById('grid');
+
+        buttonsData.forEach(btn => {
+            const box = document.createElement('div');
+            box.className = 'preview-box';
+            box.innerHTML = `<h3>${btn.label}</h3>
+                             <div class="btn-container">
+                                <button class="center-spin-btn style-${btn.id}" id="btn-${btn.id}" ${btn.id === 5 ? 'data-boot="[ ]"' : ''}>${btn.html}</button>
+                             </div>`;
+            grid.appendChild(box);
+        });
+
+        // --- ЛОГИКА АНИМАЦИЙ ---
+        function triggerAnimation(btnId, buttonElement) {
+            if (btnId === 1 || btnId === 2) {
+                // Просто даем CSS отработать :active
+                return;
+            }
+            
+            if (btnId === 3) {
+                const cliText = buttonElement.querySelector('#cliText');
+                if(!cliText) return;
+                const commands = ["> npm run dev", "> git push origin main", "> docker-compose up -d", "> sudo apt-get update", "> ssh root@192.168.1.1"];
+                const cmd = commands[Math.floor(Math.random() * commands.length)];
+                let i = 0; cliText.textContent = "";
+                
+                const interval = setInterval(() => {
+                    cliText.textContent += cmd[i]; i++;
+                    if (i >= cmd.length) {
+                        clearInterval(interval);
+                        setTimeout(() => { cliText.textContent = "> ENTER"; }, 1000);
+                    }
+                }, 40);
+            }
+            
+            if (btnId === 4) {
+                const chars = "!@#$%^&*()_+{}:<>?0123456789ABCDEF";
+                const errors = ["KERNEL_PANIC", "SEGFAULT", "ACCESS_DENIED", "FATAL_ERROR"];
+                
+                buttonElement.classList.add('spin-glitch');
+                
+                const symbolInterval = setInterval(() => {
+                    buttonElement.textContent = chars.split('').sort(() => 0.5 - Math.random()).slice(0, 9).join('');
+                }, 50);
+
+                setTimeout(() => {
+                    clearInterval(symbolInterval);
+                    buttonElement.textContent = errors[Math.floor(Math.random() * errors.length)];
+                }, 400);
+
+                setTimeout(() => {
+                    buttonElement.classList.remove('spin-glitch');
+                    buttonElement.textContent = 'SYS.ERR';
+                }, 600);
+            }
+            
+            if (btnId === 5) {
+                const bootFill = buttonElement.querySelector('#bootProgress');
+                const bootText = buttonElement.querySelector('#bootText');
+                if(!bootFill || !bootText) return;
+                
+                buttonElement.setAttribute('data-boot', '[■]');
+                bootText.textContent = "LOADING SYS..."; bootFill.style.width = "33%";
+                
+                setTimeout(() => {
+                    buttonElement.setAttribute('data-boot', '[■■]');
+                    bootText.textContent = "CHECKING..."; bootFill.style.width = "66%";
+                }, 400);
+
+                setTimeout(() => {
+                    buttonElement.setAttribute('data-boot', '[■■■]');
+                    bootText.textContent = "ACCESS GRANTED"; bootFill.style.width = "100%";
+                    buttonElement.style.color = "var(--sys-cyan)"; buttonElement.style.borderColor = "var(--sys-cyan)";
+                }, 800);
+
+                setTimeout(() => {
+                    buttonElement.style.color = "#fff"; buttonElement.style.borderColor = "#444";
+                }, 1500);
+            }
+        }
+
+        // Навешиваем обработчики
+        [1, 2, 3, 4, 5].forEach(id => {
+            const btn = document.getElementById(`btn-${id}`);
+            if (btn) {
+                btn.addEventListener('click', () => triggerAnimation(id, btn));
+            }
+        });
+    </script>
+</body>
+</html>
