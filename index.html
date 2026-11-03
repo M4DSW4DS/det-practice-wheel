@@ -188,6 +188,8 @@
             .skill-item { padding: 8px; }
             .modal { max-width: 90vw; max-height: 90vh; overflow-y: auto; }
         }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        @keyframes pulse-border { 0%, 100% { box-shadow: 0 0 20px rgba(0, 229, 255, 0.2); border-color: var(--sys-cyan); } 50% { box-shadow: 0 0 40px rgba(0, 229, 255, 0.8), inset 0 0 20px rgba(0, 229, 255, 0.3); border-color: #fff; } }
     </style>
 </head>
 <body>
@@ -359,7 +361,27 @@ document.addEventListener('touchstart', initAudio, { once: true });
         function playTick() { if (isMuted || !audioCtx) return; tickCount = (tickCount + 1) % 3; const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); if (tickCount === 0) { o.type = 'square'; o.frequency.setValueAtTime(800, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.05); } else if (tickCount === 1) { o.type = 'sine'; o.frequency.setValueAtTime(1200, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.05); } else { o.type = 'triangle'; o.frequency.setValueAtTime(600, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.05); } g.gain.setValueAtTime(0.05, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05); o.start(); o.stop(audioCtx.currentTime + 0.05); }
         function playClick() { if (isMuted || !audioCtx) return; const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sine'; o.frequency.setValueAtTime(600, audioCtx.currentTime); g.gain.setValueAtTime(0.1, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1); o.start(); o.stop(audioCtx.currentTime + 0.1); }
         function playStart() { if (isMuted || !audioCtx) return; const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sawtooth'; o.frequency.setValueAtTime(100, audioCtx.currentTime); o.frequency.linearRampToValueAtTime(400, audioCtx.currentTime + 0.3); g.gain.setValueAtTime(0.1, audioCtx.currentTime); g.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3); o.start(); o.stop(audioCtx.currentTime + 0.3); }
-        function playWin(theme) { if (isMuted || !audioCtx) return; let notes; if (theme === 'gold') notes = [523.25, 659.25, 783.99, 1046.50]; else if (theme === 'blue') notes = [587.33, 739.99, 880.00, 1174.66]; else notes = [392.00, 493.88, 587.33, 783.99]; notes.forEach((freq, i) => { const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sine'; o.frequency.value = freq; g.gain.setValueAtTime(0, audioCtx.currentTime + i * 0.08); g.gain.linearRampToValueAtTime(0.15, audioCtx.currentTime + i * 0.08 + 0.05); g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.08 + 0.4); o.start(audioCtx.currentTime + i * 0.08); o.stop(audioCtx.currentTime + i * 0.08 + 0.4); }); }
+        function playWin(theme) { 
+            if (isMuted || !audioCtx) return; 
+            const noteMap = {
+                gold: [523.25, 659.25, 783.99, 1046.50],
+                blue: [587.33, 739.99, 880.00, 1174.66],
+                retro: [330, 440, 554, 660],
+                chime: [1046, 1318, 1568, 2093],
+                cat: [392.00, 493.88, 587.33, 783.99]
+            };
+            const notes = noteMap[theme] || noteMap.blue;
+            notes.forEach((freq, i) => { 
+                const o = audioCtx.createOscillator(), g = audioCtx.createGain(); 
+                o.connect(g); g.connect(audioCtx.destination); 
+                o.type = 'sine'; o.frequency.value = freq; 
+                g.gain.setValueAtTime(0, audioCtx.currentTime + i * 0.08); 
+                g.gain.linearRampToValueAtTime(0.15, audioCtx.currentTime + i * 0.08 + 0.05); 
+                g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.08 + 0.4); 
+                o.start(audioCtx.currentTime + i * 0.08); 
+                o.stop(audioCtx.currentTime + i * 0.08 + 0.4); 
+            }); 
+        }
 
         const skills = [
             { id:'read_select', l:'Read Select', e:'👁️', d:'Select real English words.', value: 200 }, { id:'fill_blanks', l:'Fill Blanks', e:'✍️', d:'Complete the text.', value: 200 }, { id:'listen_type', l:'Listen & Type', e:'🎧', d:'Listen and transcribe.', value: 200 }, { id:'read_complete', l:'Read Complete', e:'📄', d:'Type missing letters.', value: 200 },
@@ -373,8 +395,8 @@ document.addEventListener('touchstart', initAudio, { once: true });
         const allSectors = [...skills.map(s => ({...s, type:'skill'})), ...bonuses.map(b => ({...b, type:'bonus', id:'bonus_'+b.label}))];
         const MAX_XP = 40000;
 
-        const defaultState = { p: 1, score: {1:0, 2:0, 3:0}, prog: {1:{}, 2:{}, 3:{}}, inv: {1:[], 2:[], 3:[]} };
-        let state = JSON.parse(localStorage.getItem('detGame_v23')) || defaultState;
+        const getDefaultState = () => ({ p: 1, score: {1:0, 2:0, 3:0}, prog: {1:{}, 2:{}, 3:{}}, inv: {1:[], 2:[], 3:[]} });
+        let state = JSON.parse(localStorage.getItem('detGame_v23')) || getDefaultState();
         [1, 2, 3].forEach(p => { if (!state.prog[p]) state.prog[p] = {}; skills.forEach(s => { if (state.prog[p][s.id] === undefined) state.prog[p][s.id] = 0; }); });
 
         const syncInd = document.getElementById('syncIndicator');
@@ -501,6 +523,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
             document.getElementById('tabWheel').classList.toggle('active', view === 'wheel');
             document.getElementById('tabProgress').classList.toggle('active', view === 'progress');
             localStorage.setItem('detGame_mobileView', view);
+            if (view === 'wheel') setTimeout(() => setPos(curIdx), 50);
         };
 
         window.togglePlayerSelect = function() {
@@ -517,7 +540,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
         }
         window.openResetConfirm = () => { closeSettings(); $('resetConfirmOverlay').classList.add('active'); };
         window.confirmResetProgress = () => {
-            state = { p: 1, score: {1:0, 2:0, 3:0}, prog: {1:{}, 2:{}, 3:{}}, inv: {1:[], 2:[], 3:[]} };
+            state = getDefaultState();
             [1, 2, 3].forEach(p => { state.prog[p] = {}; skills.forEach(s => state.prog[p][s.id] = 0); });
             save(); updateUI(); $('resetConfirmOverlay').classList.remove('active'); playClick();
         };
@@ -618,6 +641,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
 
             setTimeout(() => {
                 isSpinning = false; 
+                setPos(curIdx, false);
                 const winCard = drumTrack.children[curIdx]; 
                 if (winCard) {
                     const blinks = ['blink-gold', 'blink-blue', 'blink-flash'], chosenBlink = blinks[Math.floor(Math.random() * blinks.length)]; 
@@ -631,12 +655,13 @@ document.addEventListener('touchstart', initAudio, { once: true });
                     setTimeout(() => { curIdx = Math.floor(REPEATS / 2) * allSectors.length + winIdx; // Silent reset to middle
                         setPos(curIdx); }, 500);
                 }, 2000);
-            }, 6100); 
+            }, 6500); 
         }
 
         spinBtn.onclick = () => { initAudio(); executeSpin(); };
 
         function showResult(sector) {
+            mainModal.className = 'modal pop-spring';
             mainModal.style.borderColor = sector.type === 'skill' ? 'var(--sys-cyan)' : 'var(--sys-gold)';
             $('modalEmoji').textContent = sector.e; $('modalTaskName').textContent = sector.l;
             taskStateDesc.style.display = 'block'; taskStateProgress.style.display = 'none'; 
@@ -654,8 +679,15 @@ document.addEventListener('touchstart', initAudio, { once: true });
             playClick(); const sector = allSectors[winIdx];
             if (sector.type === 'bonus') {
                 let targetP = state.p, isBonus = sector.label !== 'POWER MOVE';
-                if (sector.label === 'POWER MOVE') { state.score[targetP] += 300; } else if (isBonus) { state.inv[targetP].push(sector); }
-                save(); updateUI(); closeModal(); return;
+                if (sector.label === 'POWER MOVE') {
+                    state.score[targetP] += 300;
+                    save(); updateUI(); closeModal();
+                    setTimeout(() => showEventModal('⚡', 'POWER MOVE!', 'You gained <b>+300 XP</b> instantly!', 'var(--sys-gold)', 'Awesome!', null), 350);
+                    return;
+                }
+                if (isBonus) { state.inv[targetP].push(sector); }
+                save(); updateUI(); closeModal();
+                return;
             }
             startTask(sector);
         };
