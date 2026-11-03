@@ -57,12 +57,10 @@
         
         .player-content { display: flex; align-items: center; justify-content: space-between; width: 100%; }
         
-        @keyframes pulse-p1 { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 5px var(--p1-color)); } 50% { transform: scale(1.1); filter: drop-shadow(0 0 15px var(--p1-color)); } }
-        @keyframes pulse-p2 { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 5px var(--p2-color)); } 50% { transform: scale(1.1); filter: drop-shadow(0 0 15px var(--p2-color)); } }
-        @keyframes pulse-p3 { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 5px var(--p3-color)); } 50% { transform: scale(1.1); filter: drop-shadow(0 0 15px var(--p3-color)); } }
-        .player-card.p1.active .p-avatar { animation: pulse-p1 2s infinite ease-in-out; }
-        .player-card.p2.active .p-avatar { animation: pulse-p2 2s infinite ease-in-out; }
-        .player-card.p3.active .p-avatar { animation: pulse-p3 2s infinite ease-in-out; }
+        @keyframes pulse-glow { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 5px var(--player-color)); } 50% { transform: scale(1.1); filter: drop-shadow(0 0 15px var(--player-color)); } }
+        .player-card.p1.active .p-avatar { --player-color: var(--p1-color); animation: pulse-glow 2s infinite ease-in-out; }
+        .player-card.p2.active .p-avatar { --player-color: var(--p2-color); animation: pulse-glow 2s infinite ease-in-out; }
+        .player-card.p3.active .p-avatar { --player-color: var(--p3-color); animation: pulse-glow 2s infinite ease-in-out; }
 
         .p-avatar { font-size: 2.4rem; line-height: 1; cursor: pointer; transition: 0.2s; }
         .score-display { font-family: 'Share Tech Mono', monospace; font-size: 1.1rem; background: rgba(0,0,0,0.5); padding: 2px 8px; border-radius: 6px; color: var(--sys-gold); border: 1px solid var(--sys-gold); box-shadow: 0 0 10px rgba(255, 200, 0, 0.2); }
@@ -361,8 +359,8 @@ document.addEventListener('touchstart', initAudio, { once: true });
         const allSectors = [...skills.map(s => ({...s, type:'skill'})), ...bonuses.map(b => ({...b, type:'bonus', id:'bonus_'+b.label}))];
         const MAX_XP = 40000;
 
-        let state = { p: 1, score: {1:0, 2:0, 3:0}, prog: {1:{}, 2:{}, 3:{}}, inv: {1:[], 2:[], 3:[]} };
-        try { const s = localStorage.getItem('detGame_v23'); if (s) { const p = JSON.parse(s); state = { ...state, ...p, inv: p.inv || {1:[], 2:[], 3:[]} }; if (!state.prog || !state.prog[1]) state.prog = {1:{}, 2:{}, 3:{}}; } } catch(e){}
+        const defaultState = { p: 1, score: {1:0, 2:0, 3:0}, prog: {1:{}, 2:{}, 3:{}}, inv: {1:[], 2:[], 3:[]} };
+        let state = JSON.parse(localStorage.getItem('detGame_v23')) || defaultState;
         [1, 2, 3].forEach(p => { if (!state.prog[p]) state.prog[p] = {}; skills.forEach(s => { if (state.prog[p][s.id] === undefined) state.prog[p][s.id] = 0; }); });
 
         const syncInd = document.getElementById('syncIndicator');
@@ -538,10 +536,18 @@ document.addEventListener('touchstart', initAudio, { once: true });
 
         function tickLoop() { if (!isSpinning) return; const matrix = new DOMMatrixReadOnly(window.getComputedStyle(drumTrack).transform); const currentY = matrix.m42; if (Math.abs(currentY - lastTickY) >= getCardHeight() * 0.8) { playTick(); lastTickY = currentY; } requestAnimationFrame(tickLoop); }
 
+        function calculateTargetIndex(winIdx) {
+            const curMod = curIdx % allSectors.length;
+            let diff = winIdx - curMod;
+            if (diff < 0) diff += allSectors.length;
+            const spins = 5 + Math.floor(Math.random() * 3);
+            return curIdx + (spins * allSectors.length) + diff;
+        }
+
         function executeSpin() {
             if (isSpinning) return; initAudio(); playStart();
             isSpinning = true; spinBtn.classList.add('hidden'); winIdx = Math.floor(Math.random() * allSectors.length);
-            const curMod = curIdx % allSectors.length; let diff = winIdx - curMod; if (diff < 0) diff += allSectors.length; const targetIdx = curIdx + (5 + Math.floor(Math.random() * 3)) * allSectors.length + diff;
+            const targetIdx = calculateTargetIndex(winIdx);
             const h = getCardHeight(), startOff = -(curIdx * h) + (drumWrapper.clientHeight / 2 - h / 2);
             drumTrack.style.transition = 'none'; drumTrack.style.transform = `translateY(${startOff}px)`; void drumTrack.offsetHeight;
             lastTickY = new DOMMatrixReadOnly(window.getComputedStyle(drumTrack).transform).m42; requestAnimationFrame(tickLoop);
@@ -559,7 +565,8 @@ document.addEventListener('touchstart', initAudio, { once: true });
                 setTimeout(() => {
                     if (winCard) winCard.classList.remove('blink-effect', 'blink-gold', 'blink-blue', 'blink-flash'); 
                     showResult(allSectors[winIdx]);
-                    setTimeout(() => { curIdx = Math.floor(REPEATS / 2) * allSectors.length + winIdx; setPos(curIdx); }, 500);
+                    setTimeout(() => { curIdx = Math.floor(REPEATS / 2) * allSectors.length + winIdx; // Silent reset to middle
+                        setPos(curIdx); }, 500);
                 }, 2000);
             }, 6100); 
         }
