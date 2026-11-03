@@ -319,6 +319,7 @@
 
         const BIN_ID = "6ae9fd41ffd5d16053a2dede"; 
         const ACCESS_KEY = "$2a$10$mayIaTaQgZYqqFY2qGK4e.CCH/1qK0a.F4Nepbn56WyCIne3kMUzS"; 
+const AUTOTEST_RUNNING = false; // Заглушка для внешних тестов (Playwright)
 
         const canvas = document.getElementById('matrixCanvas'), ctx = canvas.getContext('2d');
         const chars = '01ABCDEFGHIJKLMNOPQRSTUVWXYZ'; const fontSize = 14; let w, h, columns, drops = [];
@@ -582,21 +583,72 @@
             startTask(sector);
         };
 
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'h' || e.key === 'H') { openSettings(); return; }
-            if (e.key === 's' || e.key === 'S') { toggleSound(); return; }
-            if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); if (state.p === 1) switchPlayer(2); else if (state.p === 2) switchPlayer(3); else switchPlayer(1); return; }
-            if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); if (state.p === 3) switchPlayer(2); else if (state.p === 2) switchPlayer(1); else switchPlayer(3); return; }
-            if (e.key === 'Enter' || e.key === ' ') { 
-                e.preventDefault(); 
-                if (modalOverlay.classList.contains('active')) {
-                    if (btnFinish.style.display === 'block') btnFinish.click();
-                    else if (!btnAccept.disabled && btnAccept.style.display === 'block') btnAccept.click();
-                } else if (!spinBtn.classList.contains('hidden')) {
-                    spinBtn.click(); 
-                }
-            }
+        // ============================================
+// НАВИГАЦИЯ (стрелки + Enter/Space + H/S/Esc)
+// ============================================
+window.addEventListener('keydown', (e) => {
+    if (AUTOTEST_RUNNING) return; // В автотесте не мешаем роботу
+    
+    const activeModal = document.querySelector('.modal-overlay.active');
+    
+    // ESCAPE — закрыть окно
+    if (e.key === 'Escape') {
+        if (activeModal) {
+            if ($('modalOverlay').classList.contains('active')) btnClose.click();
+            else activeModal.classList.remove('active');
+        }
+        return;
+    }
+    
+    // H — настройки
+    if (e.key === 'h' || e.key === 'H' || e.key === 'р' || e.key === 'Р') {
+        if ($('settingsOverlay').classList.contains('active')) closeSettings();
+        else if (!activeModal) openSettings();
+        return;
+    }
+    
+    // S — звук
+    if (e.key === 's' || e.key === 'S' || e.key === 'ы' || e.key === 'Ы') {
+        toggleSound(); return;
+    }
+    
+    // СТРЕЛКИ — смена игрока (только без модалок)
+    if (!activeModal) {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            switchPlayer(state.p === 3 ? 1 : state.p + 1);
+            return;
+        }
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            switchPlayer(state.p === 1 ? 3 : state.p - 1);
+            return;
+        }
+    }
+    
+    // ENTER / SPACE — контекстное действие
+    if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        
+        if ($('modalOverlay').classList.contains('active')) {
+            if (btnFinish.style.display === 'block') btnFinish.click();
+            else if (!btnAccept.disabled) btnAccept.click();
+            return;
+        }
+        if ($('resetConfirmOverlay').classList.contains('active')) { $('resetConfirmOverlay').classList.remove('active'); return; }
+        if ($('settingsOverlay').classList.contains('active')) { closeSettings(); return; }
+        if ($('rewardOverlay').classList.contains('active')) { $('btnClaimReward').click(); return; }
+        if ($('luckyOverlay').classList.contains('active')) {
+            const btn = Array.from($('luckyGrid').querySelectorAll('.lucky-btn')).find(b => !b.disabled);
+            if (btn) btn.click();
+            return;
+        }
+        ['catOverlay','shieldOverlay','masterOverlay','qrOverlay'].forEach(id => {
+            if ($(id).classList.contains('active')) $(id).classList.remove('active');
         });
+        if (!spinBtn.classList.contains('hidden') && !isSpinning) spinBtn.click();
+    }
+});
 
         // --- ЛОГИКА АВТО-ТЕСТА (УЛУЧШЕННАЯ) ---
         if (IS_AUTOTEST) {
