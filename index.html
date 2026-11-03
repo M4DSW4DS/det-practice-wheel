@@ -156,6 +156,38 @@
         }
         .modal.danger { border-color: #ff4b4b; }
         .modal.gold-border { border-color: var(--sys-gold); box-shadow: 0 0 50px rgba(255, 200, 0, 0.4); }
+        .mobile-header { display: none; }
+
+        @media (max-width: 768px) {
+            body { padding: 5px; height: 100dvh; }
+            h1 { font-size: 1.2rem; text-align: left; padding-left: 8px; padding-right: 100px; margin: 0 0 4px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .top-controls { top: 8px; right: 8px; }
+            .game-layout { display: flex; flex-direction: column; gap: 6px; height: calc(100dvh - 50px); transform: none; padding: 0 5px; }
+
+            .mobile-header { display: flex; align-items: center; justify-content: space-between; padding: 0 2px; }
+            .mobile-player-badge { display: flex; gap: 6px; align-items: center; padding: 6px 14px; background: var(--panel); border: 2px solid var(--sys-cyan); border-radius: 20px; color: #fff; font-weight: 900; font-size: 0.9rem; cursor: pointer; font-family: 'Nunito'; }
+            .mobile-player-badge.p2 { border-color: var(--p2-color); }
+            .mobile-player-badge.p3 { border-color: var(--p3-color); }
+            .mobile-tabs { display: flex; gap: 4px; }
+            .mobile-tab { background: transparent; border: 2px solid var(--border); color: #b0bec5; padding: 6px 12px; border-radius: 10px; cursor: pointer; font-size: 1rem; }
+            .mobile-tab.active { background: var(--sys-cyan); color: #000; border-color: var(--sys-cyan); }
+
+            .player-switch { display: none; position: fixed; inset: 0; z-index: 200; background: rgba(10,15,20,0.95); backdrop-filter: blur(4px); flex-direction: column; align-items: center; justify-content: center; gap: 15px; padding: 20px; }
+            .player-switch.mobile-open { display: flex; }
+            .player-switch .player-card { width: 100%; max-width: 320px; opacity: 1; transform: none; }
+
+            .game-layout.view-wheel .drum-wrapper { display: flex; flex: 1; width: 100%; max-width: none; }
+            .game-layout.view-wheel .right-panel { display: none; }
+            .game-layout.view-progress .drum-wrapper { display: none; }
+            .game-layout.view-progress .right-panel { display: flex; flex: 1; width: 100%; overflow-y: auto; }
+
+            .drum-card { width: 88%; height: 75px; }
+            .center-spin-btn { width: 88%; font-size: clamp(1.4rem, 6vw, 1.8rem); }
+            .drum-emoji { font-size: 1.6rem; }
+            .drum-label { font-size: 0.9rem; }
+            .skill-item { padding: 8px; }
+            .modal { max-width: 90vw; max-height: 90vh; overflow-y: auto; }
+        }
     </style>
 </head>
 <body>
@@ -172,6 +204,16 @@
     <h1>D . E . T</h1>
 
     <div class="game-layout">
+        <div class="mobile-header">
+            <button class="mobile-player-badge" id="mobileBadge" onclick="togglePlayerSelect()">
+                <span id="badgeAvatar">🦉</span>
+                <span id="badgeScore">0</span>
+            </button>
+            <div class="mobile-tabs">
+                <button class="mobile-tab active" id="tabWheel" onclick="switchView('wheel')">🎡</button>
+                <button class="mobile-tab" id="tabProgress" onclick="switchView('progress')">📊</button>
+            </div>
+        </div>
         <div class="player-switch">
             <div class="player-card p1 active" id="cardP1" onclick="switchPlayer(1)">
                 <div class="player-content">
@@ -408,6 +450,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
                 $(`cardP${p}`).classList.toggle('active', state.p === p);
             });
             $('dashboardPanel').className = `dashboard p${state.p}-active`;
+            updateMobileBadge();
         }
 
         function updateUI() {
@@ -450,6 +493,28 @@ document.addEventListener('touchstart', initAudio, { once: true });
 
         window.openSettings = () => { $('settingsOverlay').classList.add('active'); playClick(); };
         window.closeSettings = () => { $('settingsOverlay').classList.remove('active'); playClick(); };
+
+        window.switchView = function(view) {
+            const layout = document.querySelector('.game-layout');
+            layout.classList.remove('view-wheel', 'view-progress');
+            layout.classList.add('view-' + view);
+            document.getElementById('tabWheel').classList.toggle('active', view === 'wheel');
+            document.getElementById('tabProgress').classList.toggle('active', view === 'progress');
+            localStorage.setItem('detGame_mobileView', view);
+        };
+
+        window.togglePlayerSelect = function() {
+            document.querySelector('.player-switch').classList.toggle('mobile-open');
+        };
+
+        function updateMobileBadge() {
+            const badge = document.getElementById('mobileBadge');
+            if (!badge) return;
+            const avatars = { 1: '🦉', 2: '🦊', 3: '🐼' };
+            document.getElementById('badgeAvatar').textContent = avatars[state.p];
+            document.getElementById('badgeScore').textContent = state.score[state.p];
+            badge.className = 'mobile-player-badge' + (state.p === 2 ? ' p2' : state.p === 3 ? ' p3' : '');
+        }
         window.openResetConfirm = () => { closeSettings(); $('resetConfirmOverlay').classList.add('active'); };
         window.confirmResetProgress = () => {
             state = { p: 1, score: {1:0, 2:0, 3:0}, prog: {1:{}, 2:{}, 3:{}}, inv: {1:[], 2:[], 3:[]} };
@@ -457,7 +522,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
             save(); updateUI(); $('resetConfirmOverlay').classList.remove('active'); playClick();
         };
 
-        window.switchPlayer = p => { if(p>=1 && p<=3){ playClick(); state.p = p; save(); updateUI(); } };
+        window.switchPlayer = p => { if(p>=1 && p<=3){ playClick(); state.p = p; save(); updateUI(); document.querySelector('.player-switch').classList.remove('mobile-open'); } };
         window.showQR = (e, pId) => { e.stopPropagation(); playClick(); $('qrPlayerId').textContent = pId; $('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`https://M4DSW4DS.github.io/det-practice-wheel/?player=${pId}`)}&color=131f24&bgcolor=ffffff`; $('qrOverlay').classList.add('active'); };
         
         window.useCard = (e, pId, idx) => {
@@ -654,6 +719,7 @@ window.addEventListener('keydown', (e) => {
             setTimeout(() => syncFromCloud(), 500); 
             setTimeout(() => { curIdx = Math.floor(REPEATS / 2) * allSectors.length; setPos(curIdx); }, 50); 
             window.addEventListener('resize', () => setPos(curIdx)); 
+            if (window.innerWidth <= 768) switchView(localStorage.getItem('detGame_mobileView') || 'wheel');
         });
     </script>
 </body>
