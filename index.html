@@ -348,14 +348,18 @@
     </div>
 
 <script>
-    // 1. ФОН
+    // === 1. НАСТРОЙКИ JSONBIN (ОБНОВЛЕНО НА ACCESS KEY) ===
+    const BIN_ID = "6ae9fd41ffd5d16053a2dede"; 
+    const ACCESS_KEY = "$2a$10$mayIaTaQgZYqqFY2qGK4e.CCH/1qK0a.F4Nepbn56WyCIne3kMUzS"; // Теперь здесь Access Key
+
+    // 2. ФОН
     const canvas = document.getElementById('matrixCanvas'), ctx = canvas.getContext('2d');
     const chars = '01ABCDEFGHIJKLMNOPQRSTUVWXYZ'; const fontSize = 14; let w, h, columns, drops = [];
     function resizeCanvas() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; columns = Math.floor(w / fontSize); drops = Array(columns).fill(0).map(() => Math.random() * h); }
     resizeCanvas(); window.addEventListener('resize', resizeCanvas);
     setInterval(() => { ctx.fillStyle = 'rgba(10, 15, 20, 0.1)'; ctx.fillRect(0, 0, w, h); ctx.fillStyle = 'rgba(0, 229, 255, 0.4)'; ctx.font = fontSize + 'px "Share Tech Mono", monospace'; for (let i = 0; i < drops.length; i++) { ctx.fillText(chars[Math.floor(Math.random() * chars.length)], i * fontSize, drops[i] * fontSize); if (drops[i] * fontSize > h && Math.random() > 0.98) drops[i] = 0; drops[i] += 0.4; } }, 100);
 
-    // 2. АУДИО
+    // 3. АУДИО
     let audioCtx, isMuted = false, tickCount = 0;
     function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
     window.toggleSound = () => { isMuted = !isMuted; document.getElementById('soundToggle').textContent = isMuted ? '🔇' : '🔊'; };
@@ -363,15 +367,13 @@
     function playClick() { if (isMuted || !audioCtx) return; const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sine'; o.frequency.setValueAtTime(600, audioCtx.currentTime); g.gain.setValueAtTime(0.1, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1); o.start(); o.stop(audioCtx.currentTime + 0.1); }
     function playStart() { if (isMuted || !audioCtx) return; const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sawtooth'; o.frequency.setValueAtTime(100, audioCtx.currentTime); o.frequency.linearRampToValueAtTime(400, audioCtx.currentTime + 0.3); g.gain.setValueAtTime(0.1, audioCtx.currentTime); g.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3); o.start(); o.stop(audioCtx.currentTime + 0.3); }
     function playWin(theme) { if (isMuted || !audioCtx) return; let notes; if (theme === 'gold') notes = [523.25, 659.25, 783.99, 1046.50]; else if (theme === 'blue') notes = [587.33, 739.99, 880.00, 1174.66]; else if (theme === 'purple') notes = [440.00, 523.25, 659.25, 880.00]; else if (theme === 'retro') notes = [330, 440, 554, 660]; else if (theme === 'scifi') notes = [880, 1100, 1320, 1760]; else if (theme === 'chime') notes = [1046, 1318, 1568, 2093]; else notes = [392.00, 493.88, 587.33, 783.99]; notes.forEach((freq, i) => { const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sine'; o.frequency.value = freq; g.gain.setValueAtTime(0, audioCtx.currentTime + i * 0.08); g.gain.linearRampToValueAtTime(0.15, audioCtx.currentTime + i * 0.08 + 0.05); g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.08 + 0.4); o.start(audioCtx.currentTime + i * 0.08); o.stop(audioCtx.currentTime + i * 0.08 + 0.4); }); }
-
-    // УНИКАЛЬНЫЕ ЗВУКИ ДЛЯ КНОПОК
     function playStyle1Sound() { if (isMuted || !audioCtx) return; const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'square'; o.frequency.setValueAtTime(150, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.1); g.gain.setValueAtTime(0.15, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1); o.start(); o.stop(audioCtx.currentTime + 0.1); }
     function playStyle2Sound() { if (isMuted || !audioCtx) return; const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sine'; o.frequency.setValueAtTime(440, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15); g.gain.setValueAtTime(0.2, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15); o.start(); o.stop(audioCtx.currentTime + 0.15); }
     function playStyle3Sound() { if (isMuted || !audioCtx) return; const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sawtooth'; o.frequency.setValueAtTime(1200, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.08); g.gain.setValueAtTime(0.1, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08); o.start(); o.stop(audioCtx.currentTime + 0.08); }
     function playStyle4Sound() { if (isMuted || !audioCtx) return; const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sawtooth'; o.frequency.setValueAtTime(100, audioCtx.currentTime); o.frequency.linearRampToValueAtTime(2000, audioCtx.currentTime + 0.1); o.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.2); g.gain.setValueAtTime(0.1, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2); o.start(); o.stop(audioCtx.currentTime + 0.2); }
     function playStyle5Sound() { if (isMuted || !audioCtx) return; const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'triangle'; o.frequency.setValueAtTime(300, audioCtx.currentTime); o.frequency.linearRampToValueAtTime(600, audioCtx.currentTime + 0.3); g.gain.setValueAtTime(0.1, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3); o.start(); o.stop(audioCtx.currentTime + 0.3); }
 
-    // 3. ДАННЫЕ
+    // 4. ДАННЫЕ
     const skills = [
         { id:'read_select', l:'Read Select', e:'👁️', d:'Select real English words.', value: 200 }, { id:'fill_blanks', l:'Fill Blanks', e:'✍️', d:'Complete the text.', value: 200 }, { id:'listen_type', l:'Listen & Type', e:'🎧', d:'Listen and transcribe.', value: 200 }, { id:'read_complete', l:'Read Complete', e:'📄', d:'Type missing letters.', value: 200 },
         { id:'int_reading', l:'Int. Reading', e:'💬', d:'Complete the dialogue.', value: 300 }, { id:'int_listening', l:'Int. Listening', e:'👂', d:'Answer the audio.', value: 300 }, { id:'read_speak', l:'Read & Speak', e:'📖', d:'Read and retell.', value: 300 }, { id:'int_writing', l:'Int. Writing', e:'⌨️', d:'Write a dialogue.', value: 300 },
@@ -384,7 +386,7 @@
     const allSectors = [...skills.map(s => ({...s, type:'skill'})), ...bonuses.map(b => ({...b, type:'bonus', id:'bonus_'+b.label}))];
     const MAX_XP = 40000;
 
-    // 4. СОСТОЯНИЕ
+    // 5. СОСТОЯНИЕ И СИНХРОНИЗАЦИЯ
     let state = { 
         p: 1, 
         score: {1:0, 2:0, 3:0}, 
@@ -392,8 +394,9 @@
         inv: {1:[], 2:[], 3:[]},
         btnStyles: {1: 'style-1', 2: 'style-1', 3: 'style-1'}
     };
+
     try { 
-        const s = localStorage.getItem('detGame_v21'); 
+        const s = localStorage.getItem('detGame_v22'); 
         if (s) { 
             const p = JSON.parse(s); 
             state = { ...state, ...p, inv: p.inv || {1:[], 2:[], 3:[]} }; 
@@ -401,8 +404,63 @@
             if (!state.btnStyles) state.btnStyles = {1: 'style-1', 2: 'style-1', 3: 'style-1'};
         } 
     } catch(e){}
+    
     [1, 2, 3].forEach(p => { if (!state.prog[p]) state.prog[p] = {}; skills.forEach(s => { if (state.prog[p][s.id] === undefined) state.prog[p][s.id] = 0; }); });
-    const save = () => { try { localStorage.setItem('detGame_v21', JSON.stringify(state)); } catch(e){} };
+
+    async function syncToCloud() {
+        try {
+            const payload = { players: {} };
+            for (let i = 1; i <= 6; i++) {
+                payload.players[i] = {
+                    score: state.score[i] || 0,
+                    progress: state.prog[i] || {},
+                    inventory: state.inv[i] || [],
+                    btnStyle: state.btnStyles[i] || 'style-1'
+                };
+            }
+            
+            await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Access-Key': ACCESS_KEY // <--- ИСПОЛЬЗУЕМ ACCESS KEY ЗДЕСЬ
+                },
+                body: JSON.stringify(payload)
+            });
+            console.log("✅ Прогресс сохранен в облако");
+        } catch (error) {
+            console.error("❌ Ошибка сохранения в облако:", error);
+        }
+    }
+
+    async function syncFromCloud() {
+        try {
+            const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+                headers: { 'X-Access-Key': ACCESS_KEY } // <--- ИСПОЛЬЗУЕМ ACCESS KEY ЗДЕСЬ
+            });
+            const data = await response.json();
+            const cloudData = data.record;
+            
+            if (cloudData && cloudData.players) {
+                for (let i = 1; i <= 6; i++) {
+                    if (cloudData.players[i]) {
+                        state.score[i] = cloudData.players[i].score || 0;
+                        state.prog[i] = cloudData.players[i].progress || {};
+                        state.inv[i] = cloudData.players[i].inventory || [];
+                        state.btnStyles[i] = cloudData.players[i].btnStyle || 'style-1';
+                    }
+                }
+                console.log("✅ Прогресс загружен из облака");
+            }
+        } catch (error) {
+            console.warn("⚠️ Не удалось загрузить облако. Используем локальные данные.", error);
+        }
+    }
+
+    const save = () => { 
+        try { localStorage.setItem('detGame_v22', JSON.stringify(state)); } catch(e){} 
+        syncToCloud(); 
+    };
 
     const $ = id => document.getElementById(id);
     const drumTrack = $('drumTrack'), drumWrapper = $('drumWrapper'), spinBtn = $('spinBtn');
@@ -410,7 +468,7 @@
     const taskStateDesc = $('taskStateDesc'), taskStateProgress = $('taskStateProgress');
     const REPEATS = 20; let curIdx = 0, isSpinning = false, winIdx = -1, lastTickY = 0, pendingCard = null;
 
-    // 5. ЛОГИКА КНОПКИ
+    // 6. ЛОГИКА КНОПКИ
     let isButtonAnimating = false;
 
     function openSettings() { $('settingsOverlay').classList.add('active'); updateStyleUI(); }
@@ -454,7 +512,6 @@
         isButtonAnimating = true;
         const styleClass = state.btnStyles[state.p] || 'style-1';
 
-        // Воспроизводим звук в зависимости от стиля
         if (styleClass === 'style-1') playStyle1Sound();
         else if (styleClass === 'style-2') playStyle2Sound();
         else if (styleClass === 'style-3') playStyle3Sound();
@@ -496,7 +553,7 @@
         else { callback(); isButtonAnimating = false; }
     }
 
-    // 6. ИГРОВАЯ ЛОГИКА
+    // 7. ИГРОВАЯ ЛОГИКА
     const getCardHeight = () => { const c = drumTrack.querySelector('.drum-card'); if (!c) return 95; const st = window.getComputedStyle(c); return c.offsetHeight + (parseFloat(st.marginTop) || 0) + (parseFloat(st.marginBottom) || 0); };
     function renderDrum() { drumTrack.innerHTML = Array(REPEATS).fill(allSectors.map((s, i) => { const isMaxed = s.type === 'skill' && state.prog[state.p][s.id] >= 6; return `<div class="drum-card" data-i="${i}" ${isMaxed ? 'style="opacity:0.4"' : ''}><span class="drum-emoji">${s.e}</span><span class="drum-label">${s.l}</span></div>`; }).join('')).join(''); }
     function setPos(idx, animate = false) { const h = getCardHeight(), off = -(idx * h) + (drumWrapper.clientHeight / 2 - h / 2); drumTrack.style.transition = animate ? 'transform 6s cubic-bezier(0.1, 0.9, 0.2, 1)' : 'none'; drumTrack.style.transform = `translateY(${off}px)`; document.querySelectorAll('.drum-card').forEach(c => c.classList.remove('winner', 'blink-effect', 'blink-gold', 'blink-blue', 'blink-flash')); if (drumTrack.children[idx]) drumTrack.children[idx].classList.add('winner'); }
@@ -660,30 +717,15 @@
     }
     btnClose.onclick = closeModal;
 
-    // 7. КЛАВИАТУРА И НАВИГАЦИЯ
+    // 8. КЛАВИАТУРА
     window.addEventListener('keydown', (e) => {
         if (e.key === 'h' || e.key === 'H' || e.key === 'р' || e.key === 'Р') { 
-            if ($('settingsOverlay').classList.contains('active')) closeSettings();
-            else openSettings();
-            playClick();
-            return; 
+            if ($('settingsOverlay').classList.contains('active')) closeSettings(); else openSettings(); playClick(); return; 
         }
-        if (e.key === 's' || e.key === 'S' || e.key === 'ы' || e.key === 'Ы') { 
-            toggleSound(); 
-            playClick();
-            return; 
-        }
+        if (e.key === 's' || e.key === 'S' || e.key === 'ы' || e.key === 'Ы') { toggleSound(); playClick(); return; }
         
-        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { 
-            e.preventDefault(); 
-            if (state.p === 1) switchPlayer(2); else if (state.p === 2) switchPlayer(3); else switchPlayer(1); 
-            return; 
-        }
-        if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { 
-            e.preventDefault(); 
-            if (state.p === 3) switchPlayer(2); else if (state.p === 2) switchPlayer(1); else switchPlayer(3); 
-            return; 
-        }
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); if (state.p === 1) switchPlayer(2); else if (state.p === 2) switchPlayer(3); else switchPlayer(1); return; }
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); if (state.p === 3) switchPlayer(2); else if (state.p === 2) switchPlayer(1); else switchPlayer(3); return; }
 
         if (e.key !== 'Enter' && e.key !== ' ') return;
         e.preventDefault();
@@ -706,7 +748,9 @@
         }
     });
 
-    window.addEventListener('load', () => { 
+    // 9. ЗАПУСК
+    window.addEventListener('load', async () => { 
+        await syncFromCloud(); 
         applyBtnStyle();
         updateUI(); 
         setTimeout(() => { curIdx = Math.floor(REPEATS / 2) * allSectors.length; setPos(curIdx); }, 50); 
