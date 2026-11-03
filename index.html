@@ -16,7 +16,6 @@
         
         body {
             background-color: var(--bg); font-family: 'Nunito', sans-serif; 
-            /* ИСПРАВЛЕНИЕ МОБИЛЬНОГО: 100dvh решает проблему с адресной строкой */
             height: 100dvh; width: 100vw; overflow: hidden; 
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             padding: 10px; color: #fff; user-select: none; position: relative;
@@ -145,7 +144,6 @@
         .settings-modal { border-color: var(--sys-gold); box-shadow: 0 0 50px rgba(255,200,0,0.2); }
         .settings-title { font-family: 'Nunito', font-size: 1.5rem; font-weight: 900; color: var(--sys-gold); margin-bottom: 20px; text-transform: uppercase;}
         
-        /* ИНДИКАТОР СИНХРОНИЗАЦИИ */
         #syncIndicator {
             position: fixed; bottom: 15px; left: 15px; font-size: 1.2rem; z-index: 50;
             transition: opacity 0.5s; opacity: 0.5;
@@ -164,7 +162,6 @@
 
     <canvas id="matrixCanvas"></canvas>
     
-    <!-- Индикатор синхронизации -->
     <div id="syncIndicator">💾</div>
 
     <div class="top-controls">
@@ -216,7 +213,6 @@
         </div>
     </div>
 
-    <!-- МОДАЛКИ -->
     <div class="modal-overlay" id="settingsOverlay">
         <div class="modal settings-modal pop-spring" id="settingsModal">
             <div class="modal-close-x" onclick="closeSettings()">×</div>
@@ -228,7 +224,6 @@
         </div>
     </div>
 
-    <!-- НОВАЯ КАСТОМНАЯ МОДАЛКА СБРОСА -->
     <div class="modal-overlay" id="resetConfirmOverlay">
         <div class="modal" style="border-color: #ff4b4b;">
             <span class="modal-emoji">⚠️</span>
@@ -316,9 +311,11 @@
     </div>
 
     <script>
-        // --- АВТО-ТЕСТ (Если в URL есть ?autotest) ---
         const IS_AUTOTEST = window.location.search.includes('autotest');
-        if (IS_AUTOTEST) console.log("🤖 Режим авто-теста активирован. Игра будет работать сама.");
+        
+        // Выключаем звук в автотесте, чтобы не спамить консоль и не грузить процессор
+        let isMuted = IS_AUTOTEST; 
+        if (IS_AUTOTEST) console.log("🤖 Режим авто-теста активирован. Звук выключен.");
 
         const BIN_ID = "6ae9fd41ffd5d16053a2dede"; 
         const ACCESS_KEY = "$2a$10$mayIaTaQgZYqqFY2qGK4e.CCH/1qK0a.F4Nepbn56WyCIne3kMUzS"; 
@@ -342,8 +339,8 @@
         resizeCanvas(); window.addEventListener('resize', resizeCanvas);
         requestAnimationFrame(drawMatrix);
 
-        let audioCtx, isMuted = false, tickCount = 0;
-        function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
+        let audioCtx, tickCount = 0;
+        function initAudio() { if (IS_AUTOTEST) return; if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
         window.toggleSound = () => { isMuted = !isMuted; document.getElementById('soundToggle').textContent = isMuted ? '🔇' : '🔊'; };
         function playTick() { if (isMuted || !audioCtx) return; tickCount = (tickCount + 1) % 3; const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); if (tickCount === 0) { o.type = 'square'; o.frequency.setValueAtTime(800, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.05); } else if (tickCount === 1) { o.type = 'sine'; o.frequency.setValueAtTime(1200, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.05); } else { o.type = 'triangle'; o.frequency.setValueAtTime(600, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.05); } g.gain.setValueAtTime(0.05, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05); o.start(); o.stop(audioCtx.currentTime + 0.05); }
         function playClick() { if (isMuted || !audioCtx) return; const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sine'; o.frequency.setValueAtTime(600, audioCtx.currentTime); g.gain.setValueAtTime(0.1, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1); o.start(); o.stop(audioCtx.currentTime + 0.1); }
@@ -366,17 +363,17 @@
         try { const s = localStorage.getItem('detGame_v23'); if (s) { const p = JSON.parse(s); state = { ...state, ...p, inv: p.inv || {1:[], 2:[], 3:[]} }; if (!state.prog || !state.prog[1]) state.prog = {1:{}, 2:{}, 3:{}}; } } catch(e){}
         [1, 2, 3].forEach(p => { if (!state.prog[p]) state.prog[p] = {}; skills.forEach(s => { if (state.prog[p][s.id] === undefined) state.prog[p][s.id] = 0; }); });
 
-        // --- ИНДИКАТОР СИНХРОНИЗАЦИИ ---
         const syncInd = document.getElementById('syncIndicator');
+        if (IS_AUTOTEST) syncInd.style.display = 'none'; // Скрываем индикатор в автотесте
+
         function setSyncStatus(status) {
             if (status === 'saving') syncInd.textContent = '⏳';
             else if (status === 'saved') { syncInd.textContent = '✅'; setTimeout(() => syncInd.style.opacity = '0.5', 1500); }
             else if (status === 'error') { syncInd.textContent = '⚠️'; syncInd.style.opacity = '1'; }
         }
 
-        // --- СИНХРОНИЗАЦИЯ С ЗАЩИТОЙ ОТ ОШИБОК ---
         async function syncToCloud() {
-            if (IS_AUTOTEST) return; // Отключаем сеть в авто-тесте, чтобы не спамить
+            if (IS_AUTOTEST) return;
             try {
                 setSyncStatus('saving');
                 const payload = { players: {} };
@@ -398,7 +395,7 @@
                 const data = await response.json();
                 if (data.record && data.record.players) {
                     for (let i = 1; i <= 6; i++) if (data.record.players[i]) { state.score[i] = data.record.players[i].score || 0; state.prog[i] = data.record.players[i].progress || {}; state.inv[i] = data.record.players[i].inventory || []; }
-                    updateUI(); // Обновляем UI после получения данных
+                    updateUI(); 
                 }
                 setSyncStatus('saved');
             } catch (error) { 
@@ -418,7 +415,9 @@
         const btnAccept = $('btnAccept'), btnFinish = $('btnFinish'), btnClose = $('btnClose');
         const taskStateDesc = $('taskStateDesc'), taskStateProgress = $('taskStateProgress');
         
-        const REPEATS = 16; let curIdx = 0, isSpinning = false, winIdx = -1, lastTickY = 0;
+        // ИСПРАВЛЕНИЕ: Увеличили REPEATS до 32, чтобы curIdx никогда не выходил за пределы
+        const REPEATS = 32; 
+        let curIdx = 0, isSpinning = false, winIdx = -1, lastTickY = 0;
 
         const getCardHeight = () => { const c = drumTrack.querySelector('.drum-card'); if (!c) return 95; const st = window.getComputedStyle(c); return c.offsetHeight + (parseFloat(st.marginTop) || 0) + (parseFloat(st.marginBottom) || 0); };
         function renderDrum() { drumTrack.innerHTML = Array(REPEATS).fill(allSectors.map((s, i) => { const isMaxed = s.type === 'skill' && state.prog[state.p][s.id] >= 6; return `<div class="drum-card" data-i="${i}" ${isMaxed ? 'style="opacity:0.4"' : ''}><span class="drum-emoji">${s.e}</span><span class="drum-label">${s.l}</span></div>`; }).join('')).join(''); }
@@ -440,14 +439,9 @@
             renderDrum(); setTimeout(() => setPos(curIdx), 10);
         }
 
-        // --- УПРАВЛЕНИЕ НАСТРОЙКАМИ ---
         window.openSettings = () => { $('settingsOverlay').classList.add('active'); playClick(); };
         window.closeSettings = () => { $('settingsOverlay').classList.remove('active'); playClick(); };
-        
-        window.openResetConfirm = () => {
-            closeSettings();
-            $('resetConfirmOverlay').classList.add('active');
-        };
+        window.openResetConfirm = () => { closeSettings(); $('resetConfirmOverlay').classList.add('active'); };
         window.confirmResetProgress = () => {
             state = { p: 1, score: {1:0, 2:0, 3:0}, prog: {1:{}, 2:{}, 3:{}}, inv: {1:[], 2:[], 3:[]} };
             [1, 2, 3].forEach(p => { state.prog[p] = {}; skills.forEach(s => state.prog[p][s.id] = 0); });
@@ -485,7 +479,7 @@
             taskStateDesc.style.display = 'none'; taskStateProgress.style.display = 'block'; 
             btnAccept.style.display = 'none'; btnFinish.style.display = 'block'; btnClose.textContent = 'Abort Task';
             modalOverlay.classList.add('active');
-            if (navigator.vibrate) navigator.vibrate(50); // Вибрация для мобилок
+            if (navigator.vibrate && !IS_AUTOTEST) navigator.vibrate(50);
         }
 
         function closeModal() { 
@@ -546,13 +540,17 @@
             setPos(targetIdx, true); curIdx = targetIdx;
 
             setTimeout(() => {
-                isSpinning = false; const winCard = drumTrack.children[curIdx]; 
-                const blinks = ['blink-gold', 'blink-blue', 'blink-flash'], chosenBlink = blinks[Math.floor(Math.random() * blinks.length)]; 
-                winCard.classList.add('blink-effect', chosenBlink);
-                if (chosenBlink === 'blink-gold') playWin('gold'); else if (chosenBlink === 'blink-blue') playWin('retro'); else playWin('chime');
+                isSpinning = false; 
+                const winCard = drumTrack.children[curIdx]; 
+                if (winCard) {
+                    const blinks = ['blink-gold', 'blink-blue', 'blink-flash'], chosenBlink = blinks[Math.floor(Math.random() * blinks.length)]; 
+                    winCard.classList.add('blink-effect', chosenBlink);
+                    if (chosenBlink === 'blink-gold') playWin('gold'); else if (chosenBlink === 'blink-blue') playWin('retro'); else playWin('chime');
+                }
 
                 setTimeout(() => {
-                    winCard.classList.remove('blink-effect', ...blinks); showResult(allSectors[winIdx]);
+                    if (winCard) winCard.classList.remove('blink-effect', 'blink-gold', 'blink-blue', 'blink-flash'); 
+                    showResult(allSectors[winIdx]);
                     setTimeout(() => { curIdx = Math.floor(REPEATS / 2) * allSectors.length + winIdx; setPos(curIdx); }, 500);
                 }, 2000);
             }, 6100); 
@@ -600,10 +598,9 @@
             }
         });
 
-        // --- ЛОГИКА АВТО-ТЕСТА ---
+        // --- ЛОГИКА АВТО-ТЕСТА (УЛУЧШЕННАЯ) ---
         if (IS_AUTOTEST) {
             setInterval(() => {
-                // Если открыто какое-то окно, закрываем его или нажимаем кнопку
                 if ($('modalOverlay').classList.contains('active')) {
                     if (btnFinish.style.display === 'block') btnFinish.click();
                     else if (!btnAccept.disabled && btnAccept.style.display === 'block') btnAccept.click();
@@ -616,16 +613,20 @@
                     $('shieldOverlay').classList.remove('active');
                 } else if ($('masterOverlay').classList.contains('active')) {
                     $('masterOverlay').classList.remove('active');
+                } else if ($('luckyOverlay').classList.contains('active')) {
+                    // Находим доступные кнопки и кликаем по случайной
+                    const btns = Array.from($('luckyGrid').querySelectorAll('.lucky-btn')).filter(b => !b.disabled);
+                    if (btns.length > 0) btns[Math.floor(Math.random() * btns.length)].click();
+                    else $('luckyOverlay').classList.remove('active');
                 } else if (!spinBtn.classList.contains('hidden')) {
-                    // Если колесо свободно, крутим
                     spinBtn.click();
                 }
-            }, 3000); // Каждые 3 секунды
+            }, 3000);
         }
 
         window.addEventListener('load', () => { 
-            updateUI(); // Сначала показываем локальные данные, чтобы не было пустого экрана
-            setTimeout(() => syncFromCloud(), 500); // Потом тянем из облака
+            updateUI(); 
+            setTimeout(() => syncFromCloud(), 500); 
             setTimeout(() => { curIdx = Math.floor(REPEATS / 2) * allSectors.length; setPos(curIdx); }, 50); 
             window.addEventListener('resize', () => setPos(curIdx)); 
         });
