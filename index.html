@@ -262,16 +262,6 @@
         </div>
     </div>
 
-    <div class="modal-overlay" id="rewardOverlay">
-        <div class="modal" id="rewardModal">
-            <div class="modal-close-x" onclick="closeCardModal()">×</div>
-            <span class="modal-emoji" id="rewardEmoji">🎁</span>
-            <h2 class="modal-title" id="rewardTitle">BONUS</h2>
-            <p class="modal-desc" id="rewardDesc">Show this to your parents!</p>
-            <button class="btn btn-accept" id="btnClaimReward">CLAIM REWARD</button>
-        </div>
-    </div>
-
     <div class="modal-overlay" id="luckyOverlay">
         <div class="modal" id="luckyModal">
             <div class="modal-close-x" onclick="closeCardModal()">×</div>
@@ -283,30 +273,12 @@
         </div>
     </div>
 
-    <div class="modal-overlay" id="catOverlay">
-        <div class="modal cat-modal" id="catModal">
-            <span class="modal-emoji">🐈‍⬛</span>
-            <h2 class="modal-title cat-title">CAT IN A BAG</h2>
-            <p class="modal-desc" id="catDesc">The cat stole your reward!</p>
-            <button class="btn btn-close" onclick="document.getElementById('catOverlay').classList.remove('active')" style="border-color:var(--p1-color); color:var(--p1-color);">Dismiss</button>
-        </div>
-    </div>
-    
-    <div class="modal-overlay" id="shieldOverlay">
-        <div class="modal shield-modal" id="shieldModal">
-            <span class="modal-emoji">🛡️</span>
-            <h2 class="modal-title shield-title">SHIELD ACTIVATED</h2>
-            <p class="modal-desc">The Cat tried to steal your reward, but your Shield blocked it!</p>
-            <button class="btn btn-accept" onclick="document.getElementById('shieldOverlay').classList.remove('active')">Awesome</button>
-        </div>
-    </div>
-
-    <div class="modal-overlay" id="masterOverlay">
-        <div class="modal gold-border" id="masterModal">
-            <span class="modal-emoji">🏆</span>
-            <h2 class="modal-title" style="color: var(--sys-gold);">SKILL MASTERED!</h2>
-            <p class="modal-desc" id="masterDesc">You completed all 6 levels!<br><br><span class="xp-badge">+1000 XP BONUS</span></p>
-            <button class="btn btn-accept" onclick="document.getElementById('masterOverlay').classList.remove('active')">Awesome!</button>
+    <div class="modal-overlay" id="eventOverlay">
+        <div class="modal" id="eventModal">
+            <span class="modal-emoji" id="eventEmoji">🎁</span>
+            <h2 class="modal-title" id="eventTitle">BONUS</h2>
+            <p class="modal-desc" id="eventDesc">Show this to your parents!</p>
+            <button class="btn btn-accept" id="btnEventClose" onclick="closeEventModal()">Awesome</button>
         </div>
     </div>
 
@@ -413,7 +385,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
         const taskStateDesc = $('taskStateDesc'), taskStateProgress = $('taskStateProgress');
         
         // ИСПРАВЛЕНИЕ: Увеличили REPEATS до 32, чтобы curIdx никогда не выходил за пределы
-        const REPEATS = 32; 
+        const REPEATS = 16; 
         let curIdx = 0, isSpinning = false, winIdx = -1, lastTickY = 0;
 
         const getCardHeight = () => { const c = drumTrack.querySelector('.drum-card'); if (!c) return 95; const st = window.getComputedStyle(c); return c.offsetHeight + (parseFloat(st.marginTop) || 0) + (parseFloat(st.marginBottom) || 0); };
@@ -441,8 +413,39 @@ document.addEventListener('touchstart', initAudio, { once: true });
         function updateUI() {
             renderSkills();
             renderPlayers();
-            renderDrum();
+            updateDrumOpacity();
             setTimeout(() => setPos(curIdx), 10);
+        }
+
+        function updateDrumOpacity() {
+            document.querySelectorAll('.drum-card').forEach(card => {
+                const i = parseInt(card.dataset.i);
+                const s = allSectors[i];
+                if (s.type === 'skill' && state.prog[state.p][s.id] >= 6) {
+                    card.style.opacity = '0.4';
+                } else {
+                    card.style.opacity = '1';
+                }
+            });
+        }
+
+        function showEventModal(emoji, title, desc, borderColor, btnText, onCloseAction) {
+            $('eventEmoji').textContent = emoji;
+            $('eventTitle').textContent = title;
+            $('eventDesc').innerHTML = desc;
+            $('eventModal').style.borderColor = borderColor;
+            const btn = $('btnEventClose');
+            btn.textContent = btnText;
+            window.currentEventCallback = onCloseAction;
+            $('eventOverlay').classList.add('active');
+        }
+
+        function closeEventModal() {
+            $('eventOverlay').classList.remove('active');
+            if (window.currentEventCallback) {
+                window.currentEventCallback();
+                window.currentEventCallback = null;
+            }
         }
 
         window.openSettings = () => { $('settingsOverlay').classList.add('active'); playClick(); };
@@ -464,8 +467,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
                 $('luckyGrid').innerHTML = skills.map(s => `<button class="lucky-btn" ${state.prog[state.p][s.id]>=6?'disabled':''} onclick="pickLucky('${s.id}')">${s.e} ${s.l} (${state.prog[state.p][s.id]}/6)</button>`).join(''); 
                 $('luckyOverlay').classList.add('active'); 
             } else { 
-                $('rewardEmoji').textContent = card.e; $('rewardTitle').textContent = card.label; $('rewardDesc').textContent = card.d; 
-                $('rewardOverlay').classList.add('active'); playWin('gold'); 
+                showEventModal(card.e, card.label, card.d, 'var(--sys-gold)', 'CLAIM REWARD', null); playWin('gold'); 
                 state.inv[pId].splice(idx, 1); save(); updateUI(); 
             }
         };
@@ -476,7 +478,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
             winIdx = allSectors.findIndex(x => x.id === skillId); 
             startTask(s); 
         };
-        $('btnClaimReward').onclick = () => { $('rewardOverlay').classList.remove('active'); playClick(); };
+
 
         function startTask(sector) {
             mainModal.style.borderColor = 'var(--sys-cyan)';
@@ -511,25 +513,21 @@ document.addEventListener('touchstart', initAudio, { once: true });
             
             if (Math.random() < 0.25) {
                 const shieldIdx = state.inv[state.p].findIndex(c => c.label === 'SHIELD');
-                if (shieldIdx > -1) { state.inv[state.p].splice(shieldIdx, 1); setTimeout(() => $('shieldOverlay').classList.add('active'), 300); }
+                if (shieldIdx > -1) { state.inv[state.p].splice(shieldIdx, 1); setTimeout(() => showEventModal('🛡️', 'SHIELD ACTIVATED', 'The Cat tried to steal your reward, but your Shield blocked it!', 'var(--sys-cyan)', 'Awesome', null), 300); }
                 else { stolen = true; }
             }
 
             if (stolen) {
                 const others = [1,2,3].filter(x => x !== state.p); const targetP = others[Math.floor(Math.random() * 2)]; 
                 state.score[targetP] += baseXP + bonusXP; 
-                $('catDesc').innerHTML = `The Cat stole your <b>+${baseXP} XP</b>!<br><br>But you keep your progress (${state.prog[state.p][sector.id]}/6).<br><br>The XP goes to <b>Player ${targetP}</b>!`; 
-                $('catModal').className = 'modal cat-modal pop-flip'; 
-                $('catOverlay').classList.add('active'); playWin('cat'); 
+                showEventModal('🐈‍⬛', 'CAT IN A BAG', `The Cat stole your <b>+${baseXP} XP</b>!<br><br>But you keep your progress (${state.prog[state.p][sector.id]}/6).<br><br>The XP goes to <b>Player ${targetP}</b>!`, 'var(--p1-color)', 'Damn Cat 😿', null); playWin('cat'); 
             } else { state.score[state.p] += baseXP + bonusXP; }
             
             save(); updateUI(); closeModal();
 
             if (isMastered) {
                 setTimeout(() => {
-                    $('masterDesc').innerHTML = `You completed all 6 levels of <b>${sector.l}</b>!<br><br><span class="xp-badge" style="color:var(--sys-gold); border-color:var(--sys-gold);">+${bonusXP} XP BONUS</span>`;
-                    $('masterModal').className = 'modal pop-spring'; 
-                    $('masterOverlay').classList.add('active');
+                    showEventModal('🏆', 'SKILL MASTERED!', `You completed all 6 levels of <b>${sector.l}</b>!<br><br><span class="xp-badge">+1000 XP BONUS</span>`, 'var(--sys-gold)', 'Awesome!', null);
                 }, 800);
             }
         };
@@ -633,13 +631,13 @@ window.addEventListener('keydown', (e) => {
             }
             if ($('resetConfirmOverlay').classList.contains('active')) { $('resetConfirmOverlay').classList.remove('active'); return; }
             if ($('settingsOverlay').classList.contains('active')) { closeSettings(); return; }
-            if ($('rewardOverlay').classList.contains('active')) { $('btnClaimReward').click(); return; }
+            if ($('eventOverlay').classList.contains('active')) { $('btnEventClose').click(); return; }
             if ($('luckyOverlay').classList.contains('active')) {
                 const btn = Array.from($('luckyGrid').querySelectorAll('.lucky-btn')).find(b => !b.disabled);
                 if (btn) btn.click();
                 return;
             }
-            ['catOverlay','shieldOverlay','masterOverlay','qrOverlay'].forEach(id => {
+            ['eventOverlay','qrOverlay'].forEach(id => {
                 if ($(id).classList.contains('active')) $(id).classList.remove('active');
             });
             if (!spinBtn.classList.contains('hidden') && !isSpinning) spinBtn.click();
@@ -651,6 +649,7 @@ window.addEventListener('keydown', (e) => {
         
 
         window.addEventListener('load', () => { 
+            renderDrum(); 
             updateUI(); 
             setTimeout(() => syncFromCloud(), 500); 
             setTimeout(() => { curIdx = Math.floor(REPEATS / 2) * allSectors.length; setPos(curIdx); }, 50); 
