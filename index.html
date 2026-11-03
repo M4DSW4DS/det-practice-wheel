@@ -160,7 +160,7 @@
 
         @media (max-width: 768px) {
             body { padding: 5px; height: 100dvh; }
-            h1 { font-size: 1.2rem; text-align: left; padding-left: 8px; padding-right: 100px; margin: 0 0 4px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            h1 { font-size: 1.2rem; text-align: center; padding: 0 50px; margin: 0 0 4px 0; letter-spacing: 4px; }
             .top-controls { top: 8px; right: 8px; }
             .game-layout { display: flex; flex-direction: column; gap: 6px; height: calc(100dvh - 50px); transform: none; padding: 0 5px; }
 
@@ -168,18 +168,22 @@
             .mobile-player-badge { display: flex; gap: 6px; align-items: center; padding: 6px 14px; background: var(--panel); border: 2px solid var(--sys-cyan); border-radius: 20px; color: #fff; font-weight: 900; font-size: 0.9rem; cursor: pointer; font-family: 'Nunito'; }
             .mobile-player-badge.p2 { border-color: var(--p2-color); }
             .mobile-player-badge.p3 { border-color: var(--p3-color); }
-            .mobile-tabs { display: flex; gap: 4px; }
-            .mobile-tab { background: transparent; border: 2px solid var(--border); color: #b0bec5; padding: 6px 12px; border-radius: 10px; cursor: pointer; font-size: 1rem; }
-            .mobile-tab.active { background: var(--sys-cyan); color: #000; border-color: var(--sys-cyan); }
+            .mobile-dots { display: flex; gap: 8px; align-items: center; }
+            .mobile-dots .dot { width: 8px; height: 8px; border-radius: 50%; background: #2b3d47; transition: all 0.3s; }
+            .mobile-dots .dot.active { background: var(--sys-cyan); box-shadow: 0 0 8px var(--sys-cyan); width: 20px; border-radius: 4px; }
 
-            .player-switch { display: none; position: fixed; inset: 0; z-index: 200; background: rgba(10,15,20,0.95); backdrop-filter: blur(4px); flex-direction: column; align-items: center; justify-content: center; gap: 15px; padding: 20px; }
-            .player-switch.mobile-open { display: flex; }
-            .player-switch .player-card { width: 100%; max-width: 320px; opacity: 1; transform: none; }
+            .player-switch { display: none; }
+            .game-layout.view-players .player-switch { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; padding: 20px; flex: 1; width: 100%; overflow-y: auto; }
+            .game-layout.view-players .player-card { width: 100%; max-width: 320px; opacity: 1; transform: none; }
+            .game-layout.view-players .drum-wrapper { display: none; }
+            .game-layout.view-players .right-panel { display: none; }
 
             .game-layout.view-wheel .drum-wrapper { display: flex; flex: 1; width: 100%; max-width: none; }
             .game-layout.view-wheel .right-panel { display: none; }
             .game-layout.view-progress .drum-wrapper { display: none; }
             .game-layout.view-progress .right-panel { display: flex; flex: 1; width: 100%; overflow-y: auto; }
+            .game-layout.view-wheel .player-switch { display: none; }
+            .game-layout.view-progress .player-switch { display: none; }
 
             .drum-card { width: 88%; height: 75px; }
             .center-spin-btn { width: 88%; font-size: clamp(1.4rem, 6vw, 1.8rem); }
@@ -207,13 +211,14 @@
 
     <div class="game-layout">
         <div class="mobile-header">
-            <button class="mobile-player-badge" id="mobileBadge" onclick="togglePlayerSelect()">
+            <button class="mobile-player-badge" id="mobileBadge" onclick="switchView('players')">
                 <span id="badgeAvatar">🦉</span>
                 <span id="badgeScore">0</span>
             </button>
-            <div class="mobile-tabs">
-                <button class="mobile-tab active" id="tabWheel" onclick="switchView('wheel')">🎡</button>
-                <button class="mobile-tab" id="tabProgress" onclick="switchView('progress')">📊</button>
+            <div class="mobile-dots" id="mobileDots">
+                <span class="dot" data-view="players"></span>
+                <span class="dot active" data-view="wheel"></span>
+                <span class="dot" data-view="progress"></span>
             </div>
         </div>
         <div class="player-switch">
@@ -518,16 +523,11 @@ document.addEventListener('touchstart', initAudio, { once: true });
 
         window.switchView = function(view) {
             const layout = document.querySelector('.game-layout');
-            layout.classList.remove('view-wheel', 'view-progress');
+            layout.classList.remove('view-players', 'view-wheel', 'view-progress');
             layout.classList.add('view-' + view);
-            document.getElementById('tabWheel').classList.toggle('active', view === 'wheel');
-            document.getElementById('tabProgress').classList.toggle('active', view === 'progress');
+            document.querySelectorAll('.mobile-dots .dot').forEach(d => d.classList.toggle('active', d.dataset.view === view));
             localStorage.setItem('detGame_mobileView', view);
             if (view === 'wheel') setTimeout(() => setPos(curIdx), 50);
-        };
-
-        window.togglePlayerSelect = function() {
-            document.querySelector('.player-switch').classList.toggle('mobile-open');
         };
 
         function updateMobileBadge() {
@@ -545,7 +545,15 @@ document.addEventListener('touchstart', initAudio, { once: true });
             save(); updateUI(); $('resetConfirmOverlay').classList.remove('active'); playClick();
         };
 
-        window.switchPlayer = p => { if(p>=1 && p<=3){ playClick(); state.p = p; save(); updateUI(); document.querySelector('.player-switch').classList.remove('mobile-open'); } };
+        window.switchPlayer = p => { 
+            if(p>=1 && p<=3){ 
+                playClick(); 
+                state.p = p; 
+                save(); 
+                updateUI(); 
+                if (window.innerWidth <= 768) switchView('wheel'); 
+            } 
+        };
         window.showQR = (e, pId) => { e.stopPropagation(); playClick(); $('qrPlayerId').textContent = pId; $('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`https://M4DSW4DS.github.io/det-practice-wheel/?player=${pId}`)}&color=131f24&bgcolor=ffffff`; $('qrOverlay').classList.add('active'); };
         
         window.useCard = (e, pId, idx) => {
@@ -752,6 +760,26 @@ window.addEventListener('keydown', (e) => {
             setTimeout(() => { curIdx = Math.floor(REPEATS / 2) * allSectors.length; setPos(curIdx); }, 50); 
             window.addEventListener('resize', () => setPos(curIdx)); 
             if (window.innerWidth <= 768) switchView(localStorage.getItem('detGame_mobileView') || 'wheel');
+            if (window.innerWidth <= 768) {
+                const layout = document.querySelector('.game-layout');
+                let tsX = 0, tsY = 0;
+                layout.addEventListener('touchstart', (e) => {
+                    tsX = e.touches[0].clientX;
+                    tsY = e.touches[0].clientY;
+                }, { passive: true });
+                layout.addEventListener('touchend', (e) => {
+                    const dx = e.changedTouches[0].clientX - tsX;
+                    const dy = e.changedTouches[0].clientY - tsY;
+                    if (Math.abs(dx) > 50 && Math.abs(dy) < 40) {
+                        const views = ['players', 'wheel', 'progress'];
+                        const cur = views.find(v => layout.classList.contains('view-' + v)) || 'wheel';
+                        const idx = views.indexOf(cur);
+                        const nextIdx = dx < 0 ? (idx + 1) % 3 : (idx + 2) % 3;
+                        switchView(views[nextIdx]);
+                        if (navigator.vibrate) navigator.vibrate(15);
+                    }
+                }, { passive: true });
+            }
         });
     </script>
 </body>
