@@ -124,7 +124,7 @@
         .btn-accept:disabled { background: #2b3d47; border-bottom-color: #131f24; color: #78909c; cursor: not-allowed; }
         .btn-finish { background: var(--sys-cyan); border-bottom: 4px solid #0099aa; color: #000; display: none; }
         .btn-finish:active { transform: translateY(4px); border-bottom: 0; }
-        .btn-close { background: transparent; color: #78909c; }
+        .btn-close { background: transparent; color: #78909c; border: 1px solid #2b3d47; }
         .btn-close:active { background: #131f24; color: #fff; border-color: var(--sys-cyan); }
         .btn-danger { background: #ff4b4b; border-bottom: 4px solid #cc0000; color: #fff; }
         .btn-danger:active { transform: translateY(4px); border-bottom: 0; }
@@ -164,8 +164,9 @@
             .top-controls { top: 8px; right: 8px; }
             .game-layout { display: flex; flex-direction: column; gap: 6px; height: calc(100dvh - 50px); transform: none; padding: 0 5px; }
 
-            .mobile-header { display: flex; align-items: center; justify-content: space-between; padding: 0 2px; }
+            .mobile-header { display: flex; align-items: center; justify-content: center; padding: 0 2px; position: relative; }
             .mobile-player-badge { display: flex; gap: 6px; align-items: center; padding: 6px 14px; background: var(--panel); border: 2px solid var(--sys-cyan); border-radius: 20px; color: #fff; font-weight: 900; font-size: 0.9rem; cursor: pointer; font-family: 'Nunito'; }
+            .mobile-header .mobile-player-badge { position: absolute; left: 0; top: 50%; transform: translateY(-50%); }
             .mobile-player-badge.p2 { border-color: var(--p2-color); }
             .mobile-player-badge.p3 { border-color: var(--p3-color); }
             .mobile-dots { display: flex; gap: 8px; align-items: center; }
@@ -173,8 +174,8 @@
             .mobile-dots .dot.active { background: var(--sys-cyan); box-shadow: 0 0 8px var(--sys-cyan); width: 20px; border-radius: 4px; }
 
             .player-switch { display: none; }
-            .game-layout.view-players .player-switch { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; padding: 20px; flex: 1; width: 100%; overflow-y: auto; }
-            .game-layout.view-players .player-card { width: 100%; max-width: 320px; opacity: 1; transform: none; }
+            .game-layout.view-players .player-switch { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 15px; padding: 20px 20px 40px; flex: 1; width: 100%; overflow-y: auto; }
+            .game-layout.view-players .player-card { width: 100%; max-width: 320px; min-width: 0; flex: 0 0 auto; opacity: 1; transform: none; }
             .game-layout.view-players .drum-wrapper { display: none; }
             .game-layout.view-players .right-panel { display: none; }
 
@@ -436,15 +437,17 @@ document.addEventListener('touchstart', initAudio, { once: true });
                     updateUI(); 
                 }
                 setSyncStatus('saved');
+                stateLoaded = true;
             } catch (error) { 
                 console.warn("Офлайн режим:", error); 
                 setSyncStatus('error');
             }
         }
 
+        let stateLoaded = false;
         const save = () => { 
             try { localStorage.setItem('detGame_v23', JSON.stringify(state)); } catch(e){} 
-            syncToCloud(); 
+            if (stateLoaded) syncToCloud();
         };
 
         const $ = id => document.getElementById(id);
@@ -554,7 +557,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
                 if (window.innerWidth <= 768) switchView('wheel'); 
             } 
         };
-        window.showQR = (e, pId) => { e.stopPropagation(); playClick(); $('qrPlayerId').textContent = pId; $('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`https://M4DSW4DS.github.io/det-practice-wheel/?player=${pId}`)}&color=131f24&bgcolor=ffffff`; $('qrOverlay').classList.add('active'); };
+        window.showQR = (e, pId) => { e.stopPropagation(); playClick(); $('qrPlayerId').textContent = pId; $('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`https://m4dsw4ds.github.io/det-practice-wheel/?player=${pId}`)}&color=131f24&bgcolor=ffffff`; $('qrOverlay').classList.add('active'); };
         
         window.useCard = (e, pId, idx) => {
             e.stopPropagation(); playClick(); if (state.p !== pId) return alert("Not your turn!");
@@ -756,7 +759,11 @@ window.addEventListener('keydown', (e) => {
         window.addEventListener('load', () => { 
             renderDrum(); 
             updateUI(); 
-            setTimeout(() => syncFromCloud(), 500); 
+            const urlPlayer = new URLSearchParams(window.location.search).get('player');
+            if (urlPlayer && [1,2,3].includes(parseInt(urlPlayer))) { state.p = parseInt(urlPlayer); }
+            setTimeout(async () => { 
+                try { await syncFromCloud(); } finally { stateLoaded = true; }
+            }, 500); 
             setTimeout(() => { curIdx = Math.floor(REPEATS / 2) * allSectors.length; setPos(curIdx); }, 50); 
             window.addEventListener('resize', () => setPos(curIdx)); 
             if (window.innerWidth <= 768) switchView(localStorage.getItem('detGame_mobileView') || 'wheel');
