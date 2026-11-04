@@ -260,6 +260,8 @@
             <div class="modal-close-x" onclick="closeSettings()">×</div>
             <h2 class="settings-title">Настройки</h2>
             <div class="action-btns">
+                <button class="btn btn-accept" onclick="forcePull()">🔄 Force Pull (cloud → local)</button>
+                <button class="btn btn-accept" onclick="forcePush()" style="background: #ff9600; border-bottom-color: #cc6600;">☁️ Force Push (local → cloud)</button>
                 <button class="btn btn-danger" onclick="openResetConfirm()">Сбросить прогресс</button>
                 <button class="btn btn-close" onclick="closeSettings()">Закрыть</button>
             </div>
@@ -399,6 +401,17 @@ document.addEventListener('touchstart', initAudio, { once: true });
 
         const syncInd = document.getElementById('syncIndicator');
 
+        let stateLoaded = false;
+        let cloudUnreachable = false;
+
+        function buildPayload(extra = {}) {
+            const payload = { players: {} };
+            for (let i = 1; i <= 6; i++) {
+                payload.players[i] = { score: state.score[i] || 0, progress: state.prog[i] || {}, inventory: state.inv[i] || [] };
+            }
+            return Object.assign(payload, extra);
+        }
+
         function setSyncStatus(status) {
             if (status === 'saving') syncInd.textContent = '⏳';
             else if (status === 'saved') { syncInd.textContent = '✅'; setTimeout(() => syncInd.style.opacity = '0.5', 1500); }
@@ -406,49 +419,51 @@ document.addEventListener('touchstart', initAudio, { once: true });
         }
 
         async function syncToCloud() {
-            try {
-                setSyncStatus('saving');
-                const payload = { players: {} };
-                for (let i = 1; i <= 6; i++) payload.players[i] = { score: state.score[i] || 0, progress: state.prog[i] || {}, inventory: state.inv[i] || [] };
-                const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Access-Key': ACCESS_KEY }, body: JSON.stringify(payload) });
-                if (!res.ok) throw new Error("Network response was not ok");
-                setSyncStatus('saved');
-            } catch (error) { 
-                console.warn("Ошибка синхронизации:", error); 
-                setSyncStatus('error');
-            }
-        }
+    try {
+        setSyncStatus('saving');
+        const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Access-Key': ACCESS_KEY }, body: JSON.stringify(buildPayload()) });
+        if (!res.ok) throw new Error("Network response was not ok");
+        setSyncStatus('saved');
+        return true;
+    } catch (error) { 
+        console.warn("Ошибка синхронизации:", error); 
+        setSyncStatus('error');
+        return false;
+    }
+}
 
         async function syncFromCloud(attemptsLeft = 2) {
-            try {
-                const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, { headers: { 'X-Access-Key': ACCESS_KEY } });
-                if (!response.ok) throw new Error("HTTP " + response.status);
-                const data = await response.json();
-                if (data.record && data.record.players) {
-                    for (let i = 1; i <= 6; i++) if (data.record.players[i]) { 
-                        state.score[i] = data.record.players[i].score || 0; 
-                        state.prog[i] = data.record.players[i].progress || {}; 
-                        state.inv[i] = data.record.players[i].inventory || []; 
-                    }
-                    updateUI(); 
-                }
-                setSyncStatus('saved');
-                stateLoaded = true;
-            } catch (error) { 
-                console.warn(`Sync failed (retries left: ${attemptsLeft}):`, error); 
-                if (attemptsLeft > 0) {
-                    await new Promise(r => setTimeout(r, 2000));
-                    return syncFromCloud(attemptsLeft - 1);
-                }
-                setSyncStatus('error');
-                stateLoaded = true;
+    try {
+        const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, { headers: { 'X-Access-Key': ACCESS_KEY } });
+        if (!response.ok) throw new Error("HTTP " + response.status);
+        const data = await response.json();
+        if (data.record && data.record.players) {
+            for (let i = 1; i <= 6; i++) if (data.record.players[i]) { 
+                state.score[i] = data.record.players[i].score || 0; 
+                state.prog[i] = data.record.players[i].progress || {}; 
+                state.inv[i] = data.record.players[i].inventory || []; 
             }
+            updateUI(); 
         }
+        setSyncStatus('saved');
+        stateLoaded = true;
+        cloudUnreachable = false;
+        return true;
+    } catch (error) { 
+        console.warn(`Sync failed (retries left: ${attemptsLeft}):`, error); 
+        if (attemptsLeft > 0) {
+            await new Promise(r => setTimeout(r, 2000));
+            return syncFromCloud(attemptsLeft - 1);
+        }
+        setSyncStatus('error');
+        cloudUnreachable = true;
+        return false;
+    }
+}
 
-        let stateLoaded = false;
         const save = () => { 
             try { localStorage.setItem('detGame_v23', JSON.stringify(state)); } catch(e){} 
-            if (stateLoaded) syncToCloud();
+            if (stateLoaded && !cloudUnreachable) syncToCloud();
         };
 
         const $ = id => document.getElementById(id);
@@ -503,6 +518,122 @@ document.addEventListener('touchstart', initAudio, { once: true });
             });
         }
 
+        async function runAutotest() {
+            const lines = [];
+            const log = (s) => { lines.push(s); console.log(s); };
+            const t0 = Date.now();
+            log("=== AUTOTEST " + new Date().toISOString() + " ===");
+            log("Origin: " + location.origin);
+            log("UA: " + navigator.userAgent.substring(0, 100));
+            log("");
+
+            let step1 = false, step2 = false, step3 = false, cleanup = false;
+
+            // STEP 1: GET baseline
+            log("--- STEP 1: GET baseline ---");
+            let baseline = null;
+            try {
+                const r = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, { headers: { 'X-Access-Key': ACCESS_KEY } });
+                log("GET status: " + r.status);
+                if (r.ok) {
+                    const d = await r.json();
+                    baseline = d.record;
+                    log("Cloud score: " + JSON.stringify({ p1: d.record?.players?.[1]?.score, p2: d.record?.players?.[2]?.score, p3: d.record?.players?.[3]?.score }));
+                    log("Cloud updatedAt: " + (d.metadata?.updatedAt || '?'));
+                    step1 = true;
+                } else {
+                    log("GET body: " + (await r.text()).substring(0, 200));
+                }
+            } catch(e) { log("GET FAILED: " + e.name + " — " + e.message); }
+            log(step1 ? "STEP 1: PASS" : "STEP 1: FAIL");
+            log("");
+
+            // STEP 2: PUT probe
+            if (step1) {
+                log("--- STEP 2: PUT probe ---");
+                const probeTs = Date.now();
+                window._autotestProbeTs = probeTs;
+                try {
+                    const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json', 'X-Access-Key': ACCESS_KEY },
+                        body: JSON.stringify(buildPayload({ _probe: { ts: probeTs, device: navigator.userAgent.substring(0, 60) } }))
+                    });
+                    log("PUT status: " + res.status);
+                    step2 = res.ok;
+                } catch(e) { log("PUT FAILED: " + e.name + " — " + e.message); }
+                log(step2 ? "STEP 2: PASS" : "STEP 2: FAIL");
+                log("");
+            }
+
+            // STEP 3: GET verify
+            if (step2) {
+                log("--- STEP 3: GET verify probe ---");
+                await new Promise(r => setTimeout(r, 800));
+                try {
+                    const r = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, { headers: { 'X-Access-Key': ACCESS_KEY } });
+                    log("GET status: " + r.status);
+                    if (r.ok) {
+                        const d = await r.json();
+                        const cloudProbe = d.record?._probe?.ts;
+                        log("Cloud _probe.ts: " + cloudProbe);
+                        log("Expected:      " + window._autotestProbeTs);
+                        step3 = (cloudProbe === window._autotestProbeTs);
+                    }
+                } catch(e) { log("VERIFY GET FAILED: " + e.name + " — " + e.message); }
+                log(step3 ? "STEP 3: PASS" : "STEP 3: FAIL");
+                log("");
+            }
+// STEP 4: Cleanup (restore baseline without probe)
+    if (step2) {
+        log("--- STEP 4: Cleanup (remove probe) ---");
+        try {
+            const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'X-Access-Key': ACCESS_KEY },
+                body: JSON.stringify(buildPayload({ _probe: null }))
+            });
+            log("Cleanup PUT status: " + res.status);
+            cleanup = res.ok;
+        } catch(e) { log("CLEANUP FAILED: " + e.name + " — " + e.message); }
+        log(cleanup ? "STEP 4: PASS" : "STEP 4: FAIL");
+    }
+
+    log("");
+    log("--- RESULT ---");
+    const allPass = step1 && step2 && step3 && cleanup;
+    log("Duration: " + (Date.now() - t0) + "ms");
+    log(allPass ? "✅ ALL PASS — sync works" : "❌ FAIL — see steps above");
+
+    const text = lines.join("\n");
+    console.log(text);
+            
+            window._autotestText = text;
+
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:99999;padding:15px;overflow:auto;';
+            const borderColor = allPass ? '#00e5ff' : '#ff4b4b';
+            const statusIcon = allPass ? '✅' : '❌';
+            overlay.innerHTML = `
+                <div style="max-width:600px;margin:0 auto;background:#131f24;padding:20px;border-radius:12px;border:2px solid #00e5ff;">
+                    <h2 style="color:${borderColor};margin-bottom:10px;font-family:Nunito;">${statusIcon} AUTOTEST ${allPass ? 'PASS' : 'FAIL'}</h2>
+                    <pre id="autotestOutput" style="background:#000;color:#0f0;padding:12px;border-radius:8px;font-size:11px;white-space:pre-wrap;word-break:break-all;user-select:text;font-family:monospace;line-height:1.5;">${text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
+                    <button onclick="window.copyAutotest()" style="margin-top:8px;width:100%;padding:12px;background:#00e5ff;color:#000;border:none;border-radius:8px;cursor:pointer;font-weight:900;font-family:Nunito;">📋 Copy</button>
+                    <button onclick="this.parentElement.parentElement.remove()" style="margin-top:8px;width:100%;padding:12px;background:#ff4b4b;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:900;font-family:Nunito;">Close</button>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+        }
+
+        window.copyAutotest = function() {
+            const text = window._autotestText || '';
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(() => alert('Copied.')).catch(() => alert('Copy failed. Select text manually.'));
+            } else {
+                alert('Clipboard not available. Select text manually.');
+            }
+        };
+
         function showEventModal(emoji, title, desc, borderColor, btnText, onCloseAction) {
             $('eventEmoji').textContent = emoji;
             $('eventTitle').textContent = title;
@@ -542,7 +673,37 @@ document.addEventListener('touchstart', initAudio, { once: true });
             document.getElementById('badgeScore').textContent = state.score[state.p];
             badge.className = 'mobile-player-badge p' + state.p;
         }
-        window.openResetConfirm = () => { closeSettings(); $('resetConfirmOverlay').classList.add('active'); };
+        window.forcePull = async () => {
+    playClick();
+    if (!confirm('Force PULL: overwrite local data with CLOUD data?\n\nLocal progress will be replaced by what is on the server.')) return;
+    cloudUnreachable = false;
+    const ok = await syncFromCloud(3);
+    if (ok) {
+        alert('Pull complete. Cloud data loaded.');
+    } else {
+        alert('Pull FAILED. Cloud unreachable.\n\nOn Brave: disable Shields for this site.\nOn Chrome: check internet.');
+    }
+};
+
+window.forcePush = async () => {
+    playClick();
+    if (!confirm('Force PUSH: overwrite CLOUD data with local data?\n\nServer progress will be replaced by THIS device.')) return;
+    stateLoaded = true;
+    cloudUnreachable = false;
+    setSyncStatus('saving');
+    try {
+        const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Access-Key': ACCESS_KEY }, body: JSON.stringify(buildPayload()) });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        setSyncStatus('saved');
+        alert('Push complete. Cloud now matches this device.');
+    } catch (e) {
+        setSyncStatus('error');
+        cloudUnreachable = true;
+        alert('Push FAILED. Cloud unreachable.\n\nOn Brave: disable Shields for this site.');
+    }
+};
+
+window.openResetConfirm = () => { closeSettings(); $('resetConfirmOverlay').classList.add('active'); };
         window.confirmResetProgress = () => {
             state = getDefaultState();
             [1, 2, 3].forEach(p => { state.prog[p] = {}; skills.forEach(s => state.prog[p][s.id] = 0); });
@@ -762,15 +923,15 @@ window.addEventListener('keydown', (e) => {
             if (urlPlayer && [1,2,3].includes(parseInt(urlPlayer))) { state.p = parseInt(urlPlayer); }
             renderDrum(); 
             updateUI(); 
-            setTimeout(async () => { 
-                try { await syncFromCloud(); } finally { stateLoaded = true; }
-            }, 500); 
+            setTimeout(() => syncFromCloud(), 500); 
             setTimeout(() => { curIdx = Math.floor(REPEATS / 2) * allSectors.length; setPos(curIdx); }, 50); 
             window.addEventListener('resize', () => setPos(curIdx)); 
             if (window.innerWidth <= 768) switchView(localStorage.getItem('detGame_mobileView') || 'wheel');
             document.querySelectorAll('.det-letter').forEach(el => {
                 el.addEventListener('click', () => switchView(el.dataset.view));
             });
+// autotest disabled вЂ” data-loss bug in STEP2/STEP4 (writes state instead of baseline). Fix in Block 3.
+// if (new URLSearchParams(location.search).get('autotest') === '1') setTimeout(runAutotest, 1500);
             if (window.innerWidth <= 768) {
                 const layout = document.querySelector('.game-layout');
                 let tsX = 0, tsY = 0;
