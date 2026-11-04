@@ -548,16 +548,18 @@ document.addEventListener('touchstart', initAudio, { once: true });
             log(step1 ? "STEP 1: PASS" : "STEP 1: FAIL");
             log("");
 
-            // STEP 2: PUT probe
-            if (step1) {
-                log("--- STEP 2: PUT probe ---");
+            // STEP 2: PUT probe (uses BASELINE from cloud, NOT local state)
+            if (step1 && baseline) {
+                log("--- STEP 2: PUT probe (preserving cloud data) ---");
                 const probeTs = Date.now();
                 window._autotestProbeTs = probeTs;
+                const payloadWithProbe = JSON.parse(JSON.stringify(baseline));
+                payloadWithProbe._probe = { ts: probeTs, device: navigator.userAgent.substring(0, 60) };
                 try {
                     const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json', 'X-Access-Key': ACCESS_KEY },
-                        body: JSON.stringify(buildPayload({ _probe: { ts: probeTs, device: navigator.userAgent.substring(0, 60) } }))
+                        body: JSON.stringify(payloadWithProbe)
                     });
                     log("PUT status: " + res.status);
                     step2 = res.ok;
@@ -584,14 +586,16 @@ document.addEventListener('touchstart', initAudio, { once: true });
                 log(step3 ? "STEP 3: PASS" : "STEP 3: FAIL");
                 log("");
             }
-// STEP 4: Cleanup (restore baseline without probe)
-    if (step2) {
-        log("--- STEP 4: Cleanup (remove probe) ---");
+// STEP 4: Cleanup (restore baseline exactly, no probe key)
+    if (step2 && baseline) {
+        log("--- STEP 4: Cleanup (restore baseline) ---");
+        const payloadClean = JSON.parse(JSON.stringify(baseline));
+        delete payloadClean._probe;
         try {
             const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', 'X-Access-Key': ACCESS_KEY },
-                body: JSON.stringify(buildPayload({ _probe: null }))
+                body: JSON.stringify(payloadClean)
             });
             log("Cleanup PUT status: " + res.status);
             cleanup = res.ok;
@@ -615,7 +619,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
             const borderColor = allPass ? '#00e5ff' : '#ff4b4b';
             const statusIcon = allPass ? '✅' : '❌';
             overlay.innerHTML = `
-                <div style="max-width:600px;margin:0 auto;background:#131f24;padding:20px;border-radius:12px;border:2px solid #00e5ff;">
+                <div style="max-width:600px;margin:0 auto;background:#131f24;padding:20px;border-radius:12px;border:2px solid ${borderColor};">
                     <h2 style="color:${borderColor};margin-bottom:10px;font-family:Nunito;">${statusIcon} AUTOTEST ${allPass ? 'PASS' : 'FAIL'}</h2>
                     <pre id="autotestOutput" style="background:#000;color:#0f0;padding:12px;border-radius:8px;font-size:11px;white-space:pre-wrap;word-break:break-all;user-select:text;font-family:monospace;line-height:1.5;">${text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
                     <button onclick="window.copyAutotest()" style="margin-top:8px;width:100%;padding:12px;background:#00e5ff;color:#000;border:none;border-radius:8px;cursor:pointer;font-weight:900;font-family:Nunito;">📋 Copy</button>
@@ -623,6 +627,14 @@ document.addEventListener('touchstart', initAudio, { once: true });
                 </div>
             `;
             document.body.appendChild(overlay);
+            if (!window._autotestShowModal) {
+                overlay.remove();
+                syncInd.textContent = allPass ? '🟢' : '🔴';
+                syncInd.style.opacity = '1';
+                syncInd.title = allPass ? 'Sync OK' : 'Sync FAIL (tap for details)';
+                syncInd.style.cursor = 'pointer';
+                syncInd.onclick = () => { window._autotestShowModal = true; runAutotest(); window._autotestShowModal = false; };
+            }
         }
 
         window.copyAutotest = function() {
@@ -930,8 +942,8 @@ window.addEventListener('keydown', (e) => {
             document.querySelectorAll('.det-letter').forEach(el => {
                 el.addEventListener('click', () => switchView(el.dataset.view));
             });
-// autotest disabled вЂ” data-loss bug in STEP2/STEP4 (writes state instead of baseline). Fix in Block 3.
-// if (new URLSearchParams(location.search).get('autotest') === '1') setTimeout(runAutotest, 1500);
+window._autotestShowModal = (new URLSearchParams(location.search).get('autotest') === '1');
+setTimeout(runAutotest, 1500);
             if (window.innerWidth <= 768) {
                 const layout = document.querySelector('.game-layout');
                 let tsX = 0, tsY = 0;
