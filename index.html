@@ -153,8 +153,8 @@
 
         @media (min-width: 1200px) {
             .game-layout { display: grid; grid-template-columns: 260px 420px 290px; justify-content: center; align-items: stretch; gap: 30px; width: 100%; height: 520px; margin: 0 auto; }
-            .player-switch { grid-column: 1; flex-direction: column; width: 100%; justify-content: space-between; }
-            .player-card { flex: none; width: 100%; padding: 15px; height: calc(33.3% - 10px); }
+            .player-switch { grid-column: 1; flex-direction: column; width: 100%; justify-content: flex-start; gap: 10px; overflow-y: auto; overflow-x: hidden; }
+            .player-card { flex: none; width: 100%; padding: 12px; height: auto; min-height: 96px; }
             .drum-wrapper { grid-column: 2; width: 100%; height: 100%; }
             .right-panel { display: flex; grid-column: 3; width: 100%; height: 100%; }
         }
@@ -202,12 +202,15 @@
         .modal.in-progress-mode { animation: pulse-border 1.5s infinite; }
 
         .player-name { font-size: 0.68rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; color: #b0bec5; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .watch-banner { display: none; position: fixed; top: 62px; left: 50%; transform: translateX(-50%); z-index: 60; background: rgba(255,200,0,0.14); border: 1px solid var(--sys-gold); color: var(--sys-gold); font-weight: 800; font-size: 0.7rem; padding: 6px 12px; border-radius: 999px; cursor: pointer; white-space: nowrap; max-width: 96vw; overflow: hidden; text-overflow: ellipsis; }
-        @media (max-width: 768px) {
-            .watch-banner { position: static; transform: none; margin: 0 auto 4px; width: fit-content; max-width: 92vw; }
-        }
+        .watch-head { display: none; align-items: center; gap: 6px; align-self: center; font-size: 0.7rem; font-weight: 800; color: var(--sys-gold); border: 1px solid rgba(255,200,0,0.45); background: rgba(255,200,0,0.08); border-radius: 999px; padding: 5px 12px; margin-bottom: 8px; cursor: pointer; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+        .game-layout.watching .drum-wrapper, .game-layout.watching .player-switch { display: none; }
+        .game-layout.watching .right-panel { display: flex; flex: 1; width: 100%; min-height: 0; }
         .host-toggle { display: flex; gap: 8px; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 800; color: #b0bec5; text-transform: none; letter-spacing: 0; padding: 4px 0; }
-        .host-toggle input { width: 18px; height: 18px; accent-color: var(--sys-cyan); }
+        .host-toggle input { appearance: none; -webkit-appearance: none; width: 20px; height: 20px; border: 2px solid var(--border); border-radius: 6px; background: #0d161a; position: relative; cursor: pointer; flex: 0 0 auto; }
+        .host-toggle input:checked { background: var(--sys-cyan); border-color: var(--sys-cyan); }
+        .host-toggle input:checked::after { content: '✓'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #000; font-size: 13px; font-weight: 900; }
+        .adv-links { display: flex; gap: 12px; justify-content: center; padding-top: 2px; }
+        .adv-links a { color: #607d8b; font-size: 0.62rem; font-weight: 800; text-decoration: underline; cursor: pointer; }
         .ident-input { width: 100%; padding: 12px; border-radius: 12px; border: 2px solid var(--border); background: #0d161a; color: #fff; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 1rem; margin-bottom: 10px; text-align: center; }
         .ident-input:focus { outline: none; border-color: var(--sys-cyan); }
         .avatar-pick { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-bottom: 12px; }
@@ -235,9 +238,6 @@
             <span id="badgeAvatar">🦉</span>
             <span id="badgeScore">0</span>
         </button>
-        <div class="watch-banner" id="watchBanner" style="display:none" onclick="stopWatching()">
-            👁 <span id="watchName">…</span> · read only · tap to exit
-        </div>
         <div class="player-switch" id="playerSwitch"></div>
 
         <div class="drum-wrapper" id="drumWrapper">
@@ -249,6 +249,7 @@
 
         <div class="right-panel">
             <div class="dashboard p1-active" id="dashboardPanel">
+                <div class="watch-head" id="watchHead" onclick="stopWatching()">👁 <b id="watchName">…</b> — read only</div>
                 <div class="skills-grid" id="skillsGrid"></div>
             </div>
         </div>
@@ -261,11 +262,14 @@
             <div class="action-btns">
                 <button class="btn btn-close" onclick="renameMe()">✏️ Change name</button>
                 <label class="host-toggle"><input type="checkbox" id="hostToggle" onchange="toggleHost(this.checked)"> Shared tablet — play as anyone</label>
-                <button class="btn btn-accept" onclick="forcePull()">🔄 Pull: cloud → device</button>
-                <button class="btn btn-accept" onclick="forcePush()" style="background: #ff9600; border-bottom-color: #cc6600;">☁️ Push: device → cloud</button>
-                <button class="btn btn-close" onclick="closeSettings(); runAutotest()">🩺 Sync check</button>
+                <button class="btn btn-accept" onclick="syncNow()">🔄 Sync now</button>
                 <button class="btn btn-danger" onclick="openResetConfirm()">Reset progress</button>
                 <button class="btn btn-close" onclick="closeSettings()">Close</button>
+                <div class="adv-links">
+                    <a onclick="closeSettings(); runAutotest()">Diagnostics</a>
+                    <a onclick="forcePull()">Force pull</a>
+                    <a onclick="forcePush()">Force push</a>
+                </div>
             </div>
         </div>
     </div>
@@ -274,7 +278,7 @@
         <div class="modal danger">
             <span class="modal-emoji">⚠️</span>
             <h2 class="modal-title" style="color: #ff4b4b;">WARNING</h2>
-            <p class="modal-desc">Reset progress for every card on this device? This cannot be undone.</p>
+            <p class="modal-desc">Reset progress for <b id="resetName">this card</b>? This cannot be undone.</p>
             <div class="action-btns">
                 <button class="btn btn-danger" onclick="confirmResetProgress()">Yes, reset</button>
                 <button class="btn btn-close" onclick="document.getElementById('resetConfirmOverlay').classList.remove('active')">Cancel</button>
@@ -443,9 +447,10 @@ document.addEventListener('touchstart', initAudio, { once: true });
         const canWrite = id => hostMode || id === myId;
         const groupIds = () => [...new Set([myId, ...friendIds].filter(Boolean))].sort((a, b) => a - b);
 
-        const api = (path, opt = {}) => fetch(`${SUPABASE_URL}/rest/v1/${path}`, Object.assign({}, opt, {
+        const realApi = (path, opt = {}) => fetch(`${SUPABASE_URL}/rest/v1/${path}`, Object.assign({}, opt, {
             headers: Object.assign({ 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' }, opt.headers || {})
         }));
+        let api = realApi;
 
         function setSyncStatus(mode, detail) {
             syncInd.dataset.mode = mode;
@@ -499,6 +504,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
         }
 
         const save = () => {
+            if (window.__testMode) return;
             savedAt = Date.now();
             localStorage.setItem(LS_SAVED, savedAt);
             try { localStorage.setItem(LS_STATE, JSON.stringify(state)); } catch (e) {}
@@ -628,10 +634,11 @@ document.addEventListener('touchstart', initAudio, { once: true });
         }
 
         function updateWatchBanner() {
-            const b = $('watchBanner');
-            if (!b) return;
-            b.style.display = viewId ? 'block' : 'none';
-            if (viewId) $('watchName').textContent = nameOf(viewId);
+            const on = !!viewId;
+            $('watchHead').style.display = on ? 'flex' : 'none';
+            if (on) $('watchName').textContent = nameOf(viewId);
+            $('dashboardPanel').classList.toggle('watching', on);
+            document.querySelector('.game-layout').classList.toggle('watching', on);
         }
 
         window.stopWatching = () => { viewId = 0; updateUI(); if (window.innerWidth <= 768) switchView('wheel'); };
@@ -718,6 +725,73 @@ document.addEventListener('touchstart', initAudio, { once: true });
             }
         };
 
+        // ==== SELF-TEST (?selftest=1): прогон UI на фейковом API, база не трогается ====
+        const fakeDb = new Map();
+        const reply = data => ({ ok: true, status: 200, json: async () => data, text: async () => JSON.stringify(data) });
+        function fakeApi(path, opt = {}) {
+            const [table, qs = ''] = path.split('?');
+            const method = opt.method || 'GET';
+            if (table === 'links') return Promise.resolve(reply([{ friend_id: 2 }, { friend_id: 3 }, { friend_id: 4 }]));
+            if (method === 'POST') {
+                const body = JSON.parse(opt.body || '[]');
+                body.forEach(r => fakeDb.set(r.player_id, Object.assign({ progress: {}, inventory: [], stolen_bag: 0, name: '', avatar: '🦉', token: 't' + r.player_id, score: 0 }, fakeDb.get(r.player_id) || {}, r)));
+                return Promise.resolve(reply(body));
+            }
+            const rows = [...fakeDb.values()];
+            const eq = qs.match(/player_id=eq\.(\d+)/);
+            if (eq) return Promise.resolve(reply(rows.filter(r => r.player_id === +eq[1])));
+            const inc = qs.match(/player_id=in\.\(([\d,]+)\)/);
+            if (inc) { const set = inc[1].split(',').map(Number); return Promise.resolve(reply(rows.filter(r => set.includes(r.player_id)))); }
+            return Promise.resolve(reply(rows));
+        }
+
+        window.runSelfTest = async () => {
+            const snap = JSON.stringify(state), apiSnap = api, mySnap = myId, hostSnap = hostMode, viewSnap = viewId, cloudSnap = cloudReady;
+            const metaSnap = JSON.stringify(meta), friendSnap = friendIds.slice(), rnd = Math.random;
+            const results = [];
+            const check = (name, cond, extra) => results.push((cond ? '✅ ' : '❌ ') + name + (extra ? ' — ' + extra : ''));
+            window.__testMode = true; api = fakeApi; Math.random = () => 0.99;
+            [1, 2, 3, 4].forEach(id => fakeDb.set(id, { player_id: id, name: 'P' + id, avatar: '🦊', token: 'tok' + id, score: 0, stolen_bag: 0, progress: {}, inventory: [] }));
+            myId = 1; hostMode = true; viewId = 0;
+            try {
+                await bootSync(false);
+                check('4 cards rendered', document.querySelectorAll('.player-card').length === 4, document.querySelectorAll('.player-card').length);
+                const idx = allSectors.findIndex(s => s.id === 'read_select');
+                state.prog[1] = {}; skills.forEach(s => state.prog[1][s.id] = 0); state.score[1] = 0;
+                for (let i = 0; i < 6; i++) { winIdx = idx; showResult(allSectors[idx]); btnAccept.click(); btnFinish.click(); closeModal(); }
+                check('progress stops at 6/6', state.prog[1].read_select === 6, 'progress=' + state.prog[1].read_select);
+                check('XP 6×200 + 1000 mastery', state.score[1] === 2200, 'score=' + state.score[1]);
+                selectPlayer(2);
+                check('host can switch card', state.p === 2);
+                hostMode = false; selectPlayer(3);
+                check('someone else\'s card opens read-only', viewId === 3 && document.querySelector('.game-layout').classList.contains('watching'), 'viewId=' + viewId);
+                check('wheel hidden while watching', getComputedStyle(document.querySelector('.drum-wrapper')).display === 'none');
+                stopWatching();
+                check('watch exit restores wheel', viewId === 0 && !document.querySelector('.game-layout').classList.contains('watching'));
+                state.p = 2; state.score[2] = 500; state.score[3] = 777;
+                openResetConfirm(); await confirmResetProgress();
+                check('reset touches only active card', state.score[2] === 0 && state.score[3] === 777, 'p2=' + state.score[2] + ' p3=' + state.score[3]);
+                check('modal closed after reset', !$('resetConfirmOverlay').classList.contains('active'));
+            } catch (e) { results.push('❌ crash: ' + e.message + '\n' + (e.stack || '').split('\n')[1]); }
+            state = JSON.parse(snap); api = apiSnap; myId = mySnap; hostMode = hostSnap; viewId = viewSnap; cloudReady = cloudSnap;
+            Object.keys(meta).forEach(k => delete meta[k]); Object.assign(meta, JSON.parse(metaSnap)); friendIds = friendSnap;
+            Math.random = rnd; window.__testMode = false;
+            updateUI();
+
+            const pass = results.every(r => r.startsWith('✅'));
+            const text = '=== SELF-TEST ' + (pass ? 'PASS' : 'FAIL') + ' ===\n' + results.join('\n');
+            console.log(text);
+            const ov = document.createElement('div');
+            ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:99999;padding:15px;overflow:auto;';
+            ov.innerHTML = `<div style="max-width:600px;margin:0 auto;background:#131f24;padding:20px;border-radius:12px;border:2px solid ${pass ? '#58cc02' : '#ff4b4b'};">
+                <h2 style="color:${pass ? '#58cc02' : '#ff4b4b'};margin-bottom:10px;font-family:Nunito;">${pass ? '✅ SELF-TEST PASS' : '❌ SELF-TEST FAIL'}</h2>
+                <pre style="background:#000;color:#0f0;padding:12px;border-radius:8px;font-size:12px;white-space:pre-wrap;font-family:monospace;line-height:1.6;">${esc(text)}</pre>
+                <button onclick="this.parentElement.parentElement.remove()" style="width:100%;margin-top:8px;padding:12px;background:#00e5ff;color:#000;border:none;border-radius:8px;font-weight:900;font-family:Nunito;cursor:pointer;">Close</button></div>`;
+            document.body.appendChild(ov);
+            return pass;
+        };
+
+
         function showEventModal(emoji, title, desc, borderColor, btnText, onCloseAction) {
             $('eventEmoji').textContent = emoji;
             $('eventTitle').textContent = title;
@@ -785,19 +859,25 @@ document.addEventListener('touchstart', initAudio, { once: true });
             alert(done === ids.length ? 'Done. Cloud matches this device.' : 'Pushed ' + done + ' of ' + ids.length + '.\n\n' + lastError);
         };
 
-        window.openResetConfirm = () => { closeSettings(); $('resetConfirmOverlay').classList.add('active'); };
+        window.syncNow = async () => {
+            playClick(); closeSettings();
+            const ok = await bootSync(false);
+            if (!ok) return alert('No connection to Supabase.\n\n' + lastError);
+            alert('Synced · players in group: ' + groupIds().length);
+        };
+
+        window.openResetConfirm = () => { closeSettings(); $('resetName').textContent = nameOf(state.p); $('resetConfirmOverlay').classList.add('active'); };
         window.confirmResetProgress = async () => {
-            state = getDefaultState();
-            groupIds().forEach(ensurePlayer);
-            viewId = 0;
-            state.p = myId || state.p;
-            savedAt = Date.now(); localStorage.setItem(LS_SAVED, savedAt);
-            try { localStorage.setItem(LS_STATE, JSON.stringify(state)); } catch (e) {}
-            clearTimeout(syncTimer);
-            updateUI(); $('resetConfirmOverlay').classList.remove('active'); playClick();
+            const id = state.p;
+            ensurePlayer(id);
+            state.score[id] = 0; state.inv[id] = []; state.stolenBag[id] = 0;
+            skills.forEach(s => { state.prog[id][s.id] = 0; });
+            $('resetConfirmOverlay').classList.remove('active'); playClick();
+            save(); updateUI();
             if (!cloudReady) { setSyncStatus('local', 'Reset saved on this device'); return; }
-            for (const id of groupIds().filter(canWrite)) await pushPlayer(id, true);
-            setSyncStatus('synced', 'Reset applied');
+            clearTimeout(syncTimer);
+            await pushPlayer(id, true);
+            setSyncStatus('synced', 'Reset applied to ' + nameOf(id));
         };
 
         window.selectPlayer = id => {
@@ -815,7 +895,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
             }
             viewId = id;
             updateUI();
-            if (window.innerWidth <= 768) switchView('progress');
+            switchView('progress');
         };
 
         window.showQR = (e, pId) => {
@@ -1025,7 +1105,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
 
         function executeSpin() {
             if (isSpinning) return;
-            if (viewId) { viewId = 0; updateUI(); }
+            if (viewId) { viewId = 0; updateUI(); if (window.innerWidth <= 768) switchView('wheel'); }
             ensurePlayer(state.p);
             initAudio(); playStart();
             if (curIdx >= (REPEATS - 2) * allSectors.length) {
@@ -1168,6 +1248,7 @@ window.addEventListener('keydown', (e) => {
             });
             syncInd.onclick = () => runAutotest();
             if (params.get('autotest') === '1') { runAutotest(); return; }
+            if (params.get('selftest') === '1') { runSelfTest(); return; }
             if (!myId) openIdentity();
             else setTimeout(async () => { await bootSync(true); if (pendingJoin) finishJoin(); }, 300);
             if (window.innerWidth <= 768) {
