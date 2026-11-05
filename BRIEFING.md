@@ -50,7 +50,15 @@ links (
 ```
 
 - RLS включён на обеих таблицах; политики `select/insert/update` для `anon` = `true` (открытый доступ).
-- **DELETE запрещён** — сброс прогресса делается UPDATE-ом в ноль.
+- В `player_data` **DELETE запрещён** — сброс прогресса делается UPDATE-ом в ноль.
+- В `links` DELETE **нужен** для «Remove friend». Если политики нет, PostgREST отвечает `204` и ничего не удаляет — клиент это теперь проверяет и показывает ошибку. SQL:
+
+```sql
+drop policy if exists links_del on public.links;
+create policy links_del on public.links for delete to anon, authenticated using (true);
+grant delete on public.links to anon, authenticated;
+```
+
 - Сид: игроки 1–3, связи 1↔2, 1↔3, 2↔3.
 - Связь двусторонняя: при подключении пишутся ДВЕ строки (`A→B` и `B→A`).
 

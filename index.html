@@ -206,7 +206,6 @@
         .player-meta { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; width: 100%; }
         .player-ago { font-size: 0.58rem; font-weight: 800; color: #546e7a; white-space: nowrap; }
         .app-ver { font-size: 0.6rem; color: #455a64; font-weight: 800; letter-spacing: 1px; margin-top: 6px; }
-        .game-layout.watching .right-panel { display: flex; flex: 1; width: 100%; min-height: 0; }
         .host-btn { background: transparent; border: 2px solid var(--border); color: #90a4ae; border-bottom-width: 4px; }
         .host-btn.on { background: var(--sys-cyan); border-color: var(--sys-cyan); color: #001018; }
         .adv-links { display: flex; gap: 12px; justify-content: center; padding-top: 2px; }
@@ -218,6 +217,7 @@
         .avatar-opt.sel { border-color: var(--sys-cyan); box-shadow: 0 0 10px rgba(0,229,255,0.5); }
         .ident-sep { color: #546e7a; font-size: 0.68rem; font-weight: 800; text-transform: uppercase; margin: 4px 0 10px; letter-spacing: 1px; }
         .qr-code { font-family: 'Share Tech Mono', monospace; font-size: 0.9rem; color: var(--sys-cyan); margin: 6px 0 14px; word-break: break-all; }
+        .scan-hint { font-size: 0.68rem; color: #78909c; font-weight: 700; line-height: 1.4; margin-top: 4px; }
     </style>
 </head>
 <body>
@@ -246,9 +246,9 @@
             <div class="drum-shadow bottom"></div>
             <button class="center-spin-btn" id="spinBtn"><span class="btn-text">ENTER</span></button>
             <div id="watchOverlay" onclick="stopWatching()">
-                <span class="modal-emoji" style="font-size: 3.5rem; margin-bottom: 0;">👀</span>
-                <div class="modal-task-name" style="font-size: 1.2rem; margin-bottom: 5px; text-shadow: none;">VIEWING FRIEND</div>
-                <div class="modal-desc" style="font-size: 0.85rem; margin-bottom: 0;">Read-only mode<br>Tap to exit</div>
+                <span class="modal-emoji" style="font-size: 3rem; margin-bottom: 4px;">👀</span>
+                <div class="modal-task-name" style="font-size: 1.1rem; margin-bottom: 4px; text-shadow: none;">VIEWING <span id="watchName">FRIEND</span></div>
+                <div class="modal-desc" style="font-size: 0.8rem; margin-bottom: 0;">Wheel is locked · swipe for progress<br><span style="opacity:.6">tap to return to your card</span></div>
             </div>
         </div>
 
@@ -337,7 +337,8 @@
             
             <div class="action-btns" style="margin-top: 10px;">
                 <button class="btn btn-accept" onclick="copyInviteLink()">🔗 Copy Invite Link</button>
-                <button class="btn btn-close" onclick="scanQR()" style="margin-bottom: 5px;">📷 Scan QR (Camera)</button>
+                <button class="btn btn-close" id="scanBtn" onclick="scanQR()" style="margin-bottom: 5px;">📷 Scan QR (Camera)</button>
+                <p class="scan-hint" id="scanHint" style="display:none">This browser can't scan in-page. Open the Camera app on the friend's phone and scan the code above.</p>
                 <button class="btn btn-close" onclick="document.getElementById('qrOverlay').classList.remove('active')">Close</button>
             </div>
         </div>
@@ -719,6 +720,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
             document.querySelector('.game-layout').classList.toggle('watching', on);
             $('dashboardPanel').classList.toggle('watching', on);
             const overlay = $('watchOverlay');
+            if (on) $('watchName').textContent = nameOf(viewId);
             if (overlay) overlay.style.display = on ? 'flex' : 'none';
         }
 
@@ -949,6 +951,9 @@ document.addEventListener('touchstart', initAudio, { once: true });
             $('qrPlayerId').textContent = nameOf(pId);
             $('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}&color=131f24&bgcolor=ffffff`;
             $('qrCode').textContent = currentInviteToken;
+            const canScan = canScanInline();
+            $('scanBtn').style.display = canScan ? 'block' : 'none';
+            $('scanHint').style.display = canScan ? 'none' : 'block';
             $('qrOverlay').classList.add('active');
         };
 
@@ -962,41 +967,51 @@ document.addEventListener('touchstart', initAudio, { once: true });
             }
         };
 
+        const canScanInline = () => 'BarcodeDetector' in window && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+
         window.scanQR = async () => {
-            if (!('BarcodeDetector' in window)) {
-                return alert("Your browser doesn't support inline scanning.\n\nPlease use your phone's Camera app to scan the QR code.");
+            if (!canScanInline()) {
+                return alert("This browser can't scan inside the page.\n\nOpen your Camera app, point it at the QR, or type the code.");
             }
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                const video = document.createElement('video');
-                video.srcObject = stream;
-                video.play();
-                const detector = new BarcodeDetector({ formats: ['qr_code'] });
-                const scanLoop = async () => {
-                    if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                        const barcodes = await detector.detect(video);
-                        if (barcodes.length > 0) {
-                            stream.getTracks().forEach(t => t.stop());
-                            video.remove();
-                            const raw = barcodes[0].rawValue;
-                            const token = tokenFrom(raw);
-                            if (token) {
-                                $('identityOverlay').classList.add('active');
-                                $('identCode').value = token;
-                                joinByCode();
-                            }
+            let stream;
+            try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); }
+            catch (e) { return alert('Camera access denied or unavailable.'); }
+
+            const wrap = document.createElement('div');
+            wrap.style.cssText = 'position:fixed;inset:0;background:#05080b;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:18px;';
+            wrap.innerHTML = `<video id="scanVideo" playsinline style="width:100%;max-width:420px;border-radius:16px;background:#000;"></video>
+                <div style="color:#fff;font-weight:800;font-family:Nunito;">Point at a friend's QR code</div>
+                <button id="scanCancel" style="padding:12px 26px;border-radius:12px;border:none;background:#ff4b4b;color:#fff;font-weight:900;font-family:Nunito;cursor:pointer;">Cancel</button>`;
+            document.body.appendChild(wrap);
+
+            const video = wrap.querySelector('#scanVideo');
+            video.srcObject = stream;
+            try { await video.play(); } catch (e) {}
+
+            let alive = true;
+            const stop = () => { alive = false; stream.getTracks().forEach(t => t.stop()); wrap.remove(); };
+            wrap.querySelector('#scanCancel').onclick = stop;
+
+            const detector = new BarcodeDetector({ formats: ['qr_code'] });
+            const scanLoop = async () => {
+                if (!alive) return;
+                if (video.readyState >= 2) {
+                    try {
+                        const codes = await detector.detect(video);
+                        if (codes.length) {
+                            const token = tokenFrom(codes[0].rawValue);
+                            stop();
+                            if (!token) return alert('QR read, but no code found in it.');
+                            $('qrOverlay').classList.remove('active');
+                            if (!myId) { pendingJoin = token; openIdentity(); }
+                            else { $('identCode').value = token; joinByCode(); }
                             return;
                         }
-                    }
-                    requestAnimationFrame(scanLoop);
-                };
-                alert('Point your camera at the QR code. (Scanner is active for 10s)');
-                video.style.display = 'none'; document.body.appendChild(video);
-                setTimeout(() => { stream.getTracks().forEach(t => t.stop()); video.remove(); }, 10000);
+                    } catch (e) {}
+                }
                 requestAnimationFrame(scanLoop);
-            } catch (err) {
-                alert('Camera access denied or unavailable.');
-            }
+            };
+            requestAnimationFrame(scanLoop);
         };
 
         window.removeFriend = async (e, friendId) => {
@@ -1005,16 +1020,23 @@ document.addEventListener('touchstart', initAudio, { once: true });
             if (!cloudReady) return alert('No connection to Supabase.');
             try {
                 const filter = `or=(and(owner_id.eq.${myId},friend_id.eq.${friendId}),and(owner_id.eq.${friendId},friend_id.eq.${myId}))`;
-                const r = await api(`links?${filter}`, { method: 'DELETE' });
-                if (!r.ok) throw new Error(await r.text());
-                
+                const r = await api(`links?${filter}&select=owner_id,friend_id`, {
+                    method: 'DELETE',
+                    headers: { 'Prefer': 'return=representation' }
+                });
+                if (!r.ok) throw new Error((await r.text()).slice(0, 140));
+                const removed = await r.json();
+                if (!removed.length) {
+                    throw new Error('server deleted 0 links — the DELETE policy is missing in Supabase');
+                }
                 friendIds = friendIds.filter(id => id !== friendId);
                 if (viewId === friendId) viewId = 0;
                 delete meta[friendId];
+                await loadFriends();
                 updateUI();
                 if ($('friendsOverlay').classList.contains('active')) openFriendsManager();
             } catch (err) {
-                alert('Failed to remove friend: ' + err.message);
+                alert('Failed to remove friend: ' + err.message + '\n\nRun the DELETE policy SQL in Supabase (see BRIEFING.md).');
             }
         };
 
@@ -1075,7 +1097,14 @@ document.addEventListener('touchstart', initAudio, { once: true });
             $('avatarPick').innerHTML = AVATARS.map(a => `<button class="avatar-opt${a === pickedAvatar ? ' sel' : ''}" onclick="pickAvatar('${a}')">${a}</button>`).join('');
         }
         window.pickAvatar = a => { pickedAvatar = a; renderAvatarPick(); playClick(); };
-        window.openIdentity = () => { renderAvatarPick(); $('identityOverlay').classList.add('active'); };
+        window.openIdentity = () => {
+            renderAvatarPick();
+            const hint = $('identityHint');
+            if (hint) hint.innerHTML = pendingJoin
+                ? 'You were invited. Create a card to join — or, if you already played in another browser, sign in with your own code below to keep the same progress.'
+                : 'Create your card — it shows up for everyone you connect with.';
+            $('identityOverlay').classList.add('active');
+        };
 
         const tokenFrom = raw => {
             const m = String(raw || '').match(/[?&](?:join|player)=([A-Za-z0-9]+)/);
