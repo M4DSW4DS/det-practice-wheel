@@ -199,6 +199,19 @@
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
         @keyframes pulse-border { 0%, 100% { box-shadow: 0 0 20px rgba(0, 229, 255, 0.2); border-color: var(--sys-cyan); } 50% { box-shadow: 0 0 40px rgba(0, 229, 255, 0.8), inset 0 0 20px rgba(0, 229, 255, 0.3); border-color: #fff; } }
         .modal.in-progress-mode { animation: pulse-border 1.5s infinite; }
+
+        .player-name { font-size: 0.68rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; color: #b0bec5; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .watch-banner { position: fixed; top: 8px; left: 50%; transform: translateX(-50%); z-index: 60; background: rgba(255,200,0,0.14); border: 1px solid var(--sys-gold); color: var(--sys-gold); font-weight: 800; font-size: 0.7rem; padding: 6px 12px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+        @media (min-width: 769px) { .watch-banner { top: 62px; } }
+        .host-toggle { display: flex; gap: 8px; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 800; color: #b0bec5; text-transform: none; letter-spacing: 0; padding: 4px 0; }
+        .host-toggle input { width: 18px; height: 18px; accent-color: var(--sys-cyan); }
+        .ident-input { width: 100%; padding: 12px; border-radius: 12px; border: 2px solid var(--border); background: #0d161a; color: #fff; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 1rem; margin-bottom: 10px; text-align: center; }
+        .ident-input:focus { outline: none; border-color: var(--sys-cyan); }
+        .avatar-pick { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-bottom: 12px; }
+        .avatar-opt { width: 42px; height: 42px; border-radius: 10px; border: 2px solid var(--border); background: #0d161a; font-size: 1.3rem; cursor: pointer; }
+        .avatar-opt.sel { border-color: var(--sys-cyan); box-shadow: 0 0 10px rgba(0,229,255,0.5); }
+        .ident-sep { color: #546e7a; font-size: 0.68rem; font-weight: 800; text-transform: uppercase; margin: 4px 0 10px; letter-spacing: 1px; }
+        .qr-code { font-family: 'Share Tech Mono', monospace; font-size: 0.9rem; color: var(--sys-cyan); margin: 6px 0 14px; word-break: break-all; }
     </style>
 </head>
 <body>
@@ -219,32 +232,10 @@
             <span id="badgeAvatar">🦉</span>
             <span id="badgeScore">0</span>
         </button>
-        <div class="player-switch">
-            <div class="player-card p1 active" id="cardP1" onclick="switchPlayer(1)">
-                <div class="player-content">
-                    <span class="p-avatar" onclick="showQR(event, 1)" title="Link Profile">🦉</span>
-                    <span class="score-display" id="scoreP1">0</span>
-                </div>
-                <div class="player-inv" id="inv1"></div>
-                <div class="player-xp-container"><div class="player-xp-bar"><div class="player-xp-fill" id="xpFill1"></div></div></div>
-            </div>
-            <div class="player-card p2" id="cardP2" onclick="switchPlayer(2)">
-                <div class="player-content">
-                    <span class="p-avatar" onclick="showQR(event, 2)" title="Link Profile">🦊</span>
-                    <span class="score-display" id="scoreP2">0</span>
-                </div>
-                <div class="player-inv" id="inv2"></div>
-                <div class="player-xp-container"><div class="player-xp-bar"><div class="player-xp-fill" id="xpFill2"></div></div></div>
-            </div>
-            <div class="player-card p3" id="cardP3" onclick="switchPlayer(3)">
-                <div class="player-content">
-                    <span class="p-avatar" onclick="showQR(event, 3)" title="Link Profile">🐼</span>
-                    <span class="score-display" id="scoreP3">0</span>
-                </div>
-                <div class="player-inv" id="inv3"></div>
-                <div class="player-xp-container"><div class="player-xp-bar"><div class="player-xp-fill" id="xpFill3"></div></div></div>
-            </div>
+        <div class="watch-banner" id="watchBanner" style="display:none" onclick="stopWatching()">
+            👁 <span id="watchName">…</span> · только чтение · закрыть
         </div>
+        <div class="player-switch" id="playerSwitch"></div>
 
         <div class="drum-wrapper" id="drumWrapper">
             <div class="drum-shadow top"></div>
@@ -265,6 +256,8 @@
             <div class="modal-close-x" onclick="closeSettings()">×</div>
             <h2 class="settings-title">Настройки</h2>
             <div class="action-btns">
+                <button class="btn btn-close" onclick="renameMe()">✏️ Сменить имя</button>
+                <label class="host-toggle"><input type="checkbox" id="hostToggle" onchange="toggleHost(this.checked)"> Общий планшет — играть за всех</label>
                 <button class="btn btn-accept" onclick="forcePull()">🔄 Pull: облако → устройство</button>
                 <button class="btn btn-accept" onclick="forcePush()" style="background: #ff9600; border-bottom-color: #cc6600;">☁️ Push: устройство → облако</button>
                 <button class="btn btn-close" onclick="closeSettings(); runAutotest()">🩺 Проверить синхронизацию</button>
@@ -278,7 +271,7 @@
         <div class="modal danger">
             <span class="modal-emoji">⚠️</span>
             <h2 class="modal-title" style="color: #ff4b4b;">ВНИМАНИЕ</h2>
-            <p class="modal-desc">Вы уверены, что хотите полностью сбросить прогресс всех игроков? Это действие нельзя отменить.</p>
+            <p class="modal-desc">Обнулить прогресс всех карточек, доступных этому устройству? Действие необратимо.</p>
             <div class="action-btns">
                 <button class="btn btn-danger" onclick="confirmResetProgress()">Да, сбросить</button>
                 <button class="btn btn-close" onclick="document.getElementById('resetConfirmOverlay').classList.remove('active')">Отмена</button>
@@ -302,13 +295,29 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="identityOverlay">
+        <div class="modal" id="identityModal" style="border-color: var(--sys-cyan);">
+            <span class="modal-emoji">👋</span>
+            <h2 class="modal-task-name">КТО ТЫ?</h2>
+            <p class="modal-desc" id="identityHint">Создай свою карточку — она появится у тех, с кем ты соединишься ссылкой.</p>
+            <input id="identName" class="ident-input" maxlength="14" placeholder="Твоё имя" autocomplete="off">
+            <div class="avatar-pick" id="avatarPick"></div>
+            <button class="btn btn-accept" onclick="createMe()">Создать мою карточку</button>
+            <div class="ident-sep">уже есть карточка?</div>
+            <input id="identCode" class="ident-input" placeholder="Код или ссылка" autocomplete="off">
+            <button class="btn btn-close" onclick="loginByCode()">Войти по коду</button>
+            <button class="btn btn-close" style="margin-top:8px" onclick="document.getElementById('identityOverlay').classList.remove('active')">Позже</button>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="qrOverlay">
         <div class="modal" id="qrModal" style="border-color: var(--sys-cyan);">
             <div class="modal-close-x" onclick="document.getElementById('qrOverlay').classList.remove('active')">×</div>
-            <h2 class="modal-title" style="color: var(--sys-cyan);">LINK_PROFILE</h2>
-            <p class="modal-desc">Scan this QR code to link account to Player <span id="qrPlayerId">1</span>.</p>
+            <h2 class="modal-title" style="color: var(--sys-cyan);">ПРИГЛАШЕНИЕ</h2>
+            <p class="modal-desc">Дай отсканировать код или продиктуй его — так друг подключится к <b id="qrPlayerId">…</b>.</p>
             <img src="" id="qrImage" class="qr-image" alt="QR Code">
-            <button class="btn btn-accept" onclick="document.getElementById('qrOverlay').classList.remove('active')">Done</button>
+            <p class="qr-code" id="qrCode"></p>
+            <button class="btn btn-accept" onclick="document.getElementById('qrOverlay').classList.remove('active')">Готово</button>
         </div>
     </div>
 
@@ -400,19 +409,36 @@ document.addEventListener('touchstart', initAudio, { once: true });
         const allSectors = [...skills.map(s => ({...s, type:'skill'})), ...bonuses.map(b => ({...b, type:'bonus', id:'bonus_'+b.label}))];
         const MAX_XP = 40000;
 
-        const getDefaultState = () => ({ p: 1, score: {1:0, 2:0, 3:0}, prog: {1:{}, 2:{}, 3:{}}, inv: {1:[], 2:[], 3:[]}, stolenBag: {1:0, 2:0, 3:0} });
+        const AVATARS = ['🦉', '🦊', '🐼', '🐯', '🐸', '🐙'];
+        const getDefaultState = () => ({ p: 1, score: {}, prog: {}, inv: {}, stolenBag: {} });
         let state;
-try { state = JSON.parse(localStorage.getItem('detGame_v23')) || getDefaultState(); }
-catch(e) { console.warn('Corrupt localStorage, reset:', e); state = getDefaultState(); }
-        [1, 2, 3].forEach(p => { if (!state.prog[p]) state.prog[p] = {}; skills.forEach(s => { if (state.prog[p][s.id] === undefined) state.prog[p][s.id] = 0; }); });
+        try { state = JSON.parse(localStorage.getItem('detGame_v23')) || getDefaultState(); }
+        catch (e) { console.warn('Corrupt localStorage, reset:', e); state = getDefaultState(); }
+        state.score = state.score || {}; state.prog = state.prog || {}; state.inv = state.inv || {}; state.stolenBag = state.stolenBag || {};
+
+        const ensurePlayer = id => {
+            if (!state.prog[id]) state.prog[id] = {};
+            skills.forEach(s => { if (state.prog[id][s.id] === undefined) state.prog[id][s.id] = 0; });
+            if (state.score[id] === undefined) state.score[id] = 0;
+            if (!state.inv[id]) state.inv[id] = [];
+            if (state.stolenBag[id] === undefined) state.stolenBag[id] = 0;
+        };
+        [1, 2, 3].forEach(ensurePlayer);
 
         const syncInd = document.getElementById('syncIndicator');
 
-        // ==== SUPABASE SYNC: одна строка = один игрок ====
-        const PLAYERS = 3, LS_STATE = 'detGame_v23', LS_SAVED = 'detGame_savedAt', LS_SYNCED = 'detGame_syncedAt', LS_LINK = 'detGame_linkedPlayer';
+        // ==== SUPABASE: одна строка = один игрок, связи через links ====
+        const LS_STATE = 'detGame_v23', LS_SAVED = 'detGame_savedAt', LS_SYNCED = 'detGame_syncedAt', LS_MY = 'detGame_myPlayer', LS_HOST = 'detGame_host', LS_MIGR = 'detGame_migrated';
         let cloudReady = false, syncTimer = null, bootTimer = null, bannerShown = false, migratePending = false, lastError = '';
         let savedAt = +(localStorage.getItem(LS_SAVED) || 0), syncedAt = +(localStorage.getItem(LS_SYNCED) || 0);
         const isDirty = () => savedAt > syncedAt;
+
+        let myId = +(localStorage.getItem(LS_MY) || 0);
+        let hostMode = localStorage.getItem(LS_HOST) === '1';
+        let viewId = 0, friendIds = [], pendingJoin = '';
+        const meta = {};                                   // id -> {name, avatar, token}
+        const canWrite = id => hostMode || id === myId;
+        const groupIds = () => [...new Set([myId, ...friendIds].filter(Boolean))].sort((a, b) => a - b);
 
         const api = (path, opt = {}) => fetch(`${SUPABASE_URL}/rest/v1/${path}`, Object.assign({}, opt, {
             headers: Object.assign({ 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' }, opt.headers || {})
@@ -425,20 +451,23 @@ catch(e) { console.warn('Corrupt localStorage, reset:', e); state = getDefaultSt
         }
 
         const rowOf = p => ({ player_id: p, score: state.score[p] | 0, stolen_bag: (state.stolenBag && state.stolenBag[p]) | 0, progress: state.prog[p] || {}, inventory: state.inv[p] || [] });
+        const nameOf = id => (meta[id] && meta[id].name) || ('Игрок ' + id);
+        const avatarOf = id => (meta[id] && meta[id].avatar) || '🦉';
 
         function applyRow(r) {
-            const p = r.player_id;
-            if (!(p >= 1 && p <= PLAYERS)) return;
-            state.score[p] = r.score | 0;
-            state.prog[p] = r.progress || {};
-            state.inv[p] = r.inventory || [];
-            if (!state.stolenBag) state.stolenBag = { 1: 0, 2: 0, 3: 0 };
-            state.stolenBag[p] = r.stolen_bag | 0;
-            skills.forEach(s => { if (state.prog[p][s.id] === undefined) state.prog[p][s.id] = 0; });
+            const id = r.player_id;
+            meta[id] = { name: r.name || '', avatar: r.avatar || '🦉', token: r.token || '' };
+            ensurePlayer(id);
+            state.score[id] = r.score | 0;
+            state.prog[id] = r.progress || {};
+            skills.forEach(s => { if (state.prog[id][s.id] === undefined) state.prog[id][s.id] = 0; });
+            state.inv[id] = r.inventory || [];
+            state.stolenBag[id] = r.stolen_bag | 0;
         }
 
         async function pushPlayer(p = state.p, quiet = false) {
             if (!cloudReady) { setSyncStatus('local', 'Облако недоступно — прогресс сохранён на устройстве'); return false; }
+            if (!canWrite(p)) { setSyncStatus('local', 'Чужая карточка — только просмотр'); return false; }
             const stamp = Date.now();
             if (!quiet) setSyncStatus('saving');
             try {
@@ -451,7 +480,7 @@ catch(e) { console.warn('Corrupt localStorage, reset:', e); state = getDefaultSt
                 const row = (await r.json())[0] || {};
                 syncedAt = Math.max(syncedAt, stamp);
                 localStorage.setItem(LS_SYNCED, syncedAt);
-                setSyncStatus('synced', 'Игрок ' + p + ' сохранён в Supabase · ' + (row.updated_at || ''));
+                setSyncStatus('synced', nameOf(p) + ' сохранён · ' + (row.updated_at || ''));
                 return true;
             } catch (e) {
                 lastError = String(e.message || e);
@@ -469,29 +498,42 @@ catch(e) { console.warn('Corrupt localStorage, reset:', e); state = getDefaultSt
             syncTimer = setTimeout(() => pushPlayer(state.p), 400);
         };
 
-        async function pullAll(applyMine = true) {
-            const r = await api('player_data?select=player_id,score,stolen_bag,progress,inventory,updated_at&order=player_id');
+        async function loadFriends() {
+            if (!myId) { friendIds = []; return; }
+            const r = await api(`links?owner_id=eq.${myId}&select=friend_id`);
+            if (!r.ok) throw new Error('HTTP ' + r.status + ' · ' + (await r.text()).slice(0, 140));
+            friendIds = (await r.json()).map(x => +x.friend_id).filter(id => id && id !== myId);
+        }
+
+        async function loadGroup(keepMine = false) {
+            const ids = groupIds();
+            if (!ids.length) return [];
+            const r = await api(`player_data?player_id=in.(${ids.join(',')})&select=*`);
             if (!r.ok) throw new Error('HTTP ' + r.status + ' · ' + (await r.text()).slice(0, 140));
             const rows = await r.json();
-            rows.forEach(row => { if (applyMine || row.player_id !== state.p) applyRow(row); });
+            rows.forEach(row => {
+                if (keepMine && row.player_id === state.p) meta[row.player_id] = { name: row.name || '', avatar: row.avatar || '🦉', token: row.token || '' };
+                else applyRow(row);
+            });
             return rows;
         }
 
         async function bootSync(allowBanner = false) {
+            if (!myId) { setSyncStatus('local', 'Карточка не создана — прогресс на устройстве'); return false; }
             setSyncStatus('saving', 'Читаю облако…');
             try {
                 const pending = migratePending;
                 const wasDirty = isDirty() || pending;
-                const rows = await pullAll(!wasDirty);
+                await loadFriends();
+                const rows = await loadGroup(wasDirty);
                 cloudReady = true;
                 updateUI();
                 if (pending) {
-                    for (const p of [1, 2, 3]) if (!(await pushPlayer(p, true))) throw new Error(lastError);
+                    for (const id of groupIds()) if (!(await pushPlayer(id, true))) throw new Error(lastError);
                     migratePending = false;
-                    localStorage.setItem('detGame_migrated', '1');
-                    setSyncStatus('synced', 'Локальный прогресс игроков перенесён в Supabase');
-                } else if (!rows.some(x => x.player_id === state.p) || wasDirty) { if (!(await pushPlayer(state.p))) throw new Error(lastError); }
-                else setSyncStatus('synced', 'Игрок ' + state.p + ' загружен из Supabase');
+                    setSyncStatus('synced', 'Локальный прогресс перенесён в Supabase');
+                } else if (wasDirty) { if (!(await pushPlayer(state.p))) throw new Error(lastError); }
+                else setSyncStatus('synced', 'Игроков в группе: ' + rows.length);
                 bannerShown = false;
                 return true;
             } catch (e) {
@@ -506,12 +548,14 @@ catch(e) { console.warn('Corrupt localStorage, reset:', e); state = getDefaultSt
             }
         }
 
-        // одноразовая миграция: прогресс, накопленный до Supabase, уходит в облако, а не затирается нулями
-        function migrateLocalOnce() {
-            if (localStorage.getItem('detGame_migrated')) return;
-            const hasLocal = [1, 2, 3].some(p => (state.score[p] | 0) > 0 || (state.inv[p] || []).length || Object.values(state.prog[p] || {}).some(v => v > 0));
-            if (hasLocal) { migratePending = true; savedAt = Date.now(); localStorage.setItem(LS_SAVED, savedAt); }
-            else localStorage.setItem('detGame_migrated', '1');
+        // первичная настройка: планшет с историей остаётся хостом, новое устройство спросит «Кто ты?»
+        function initIdentity() {
+            if (myId || localStorage.getItem(LS_MIGR)) return;
+            const hasLocal = Object.keys(state.score).some(id => (state.score[id] | 0) > 0 || (state.inv[id] || []).length || Object.values(state.prog[id] || {}).some(v => v > 0));
+            if (!hasLocal) return;
+            hostMode = true; myId = 1;
+            localStorage.setItem(LS_HOST, '1'); localStorage.setItem(LS_MY, 1); localStorage.setItem(LS_MIGR, '1');
+            migratePending = true; savedAt = Date.now(); localStorage.setItem(LS_SAVED, savedAt);
         }
 
         function showSyncBanner() {
@@ -544,23 +588,44 @@ catch(e) { console.warn('Corrupt localStorage, reset:', e); state = getDefaultSt
         function setPos(idx, animate = false) { const h = getCardHeight(), off = -(idx * h) + (drumWrapper.clientHeight / 2 - h / 2); drumTrack.style.transition = animate ? 'transform 6s cubic-bezier(0.1, 0.9, 0.2, 1)' : 'none'; drumTrack.style.transform = `translateY(${off}px)`; document.querySelectorAll('.drum-card').forEach(c => c.classList.remove('winner', 'blink-effect', 'blink-gold', 'blink-blue', 'blink-flash')); if (drumTrack.children[idx]) drumTrack.children[idx].classList.add('winner'); }
 
         function renderSkills() {
+            const src = viewId || state.p;
             $('skillsGrid').innerHTML = skills.map(s => {
-                const prog = state.prog[state.p][s.id];
+                const prog = state.prog[src][s.id];
                 let segs = Array(6).fill(0).map((_, i) => `<div class="skill-seg ${i < prog ? 'filled' : ''}"></div>`).join('');
                 return `<div class="skill-item ${prog >= 6 ? 'done' : ''}"><div class="skill-name"><span>${s.e}</span><span>${s.l}</span></div><div class="skill-bar">${segs}</div></div>`;
             }).join('');
         }
 
+        const shownId = () => viewId || state.p;
+
         function renderPlayers() {
-            [1, 2, 3].forEach(p => {
-                $(`scoreP${p}`).textContent = state.score[p]; 
-                $(`xpFill${p}`).style.width = Math.min((state.score[p] / MAX_XP) * 100, 100) + '%'; 
-                $(`inv${p}`).innerHTML = (state.inv[p]||[]).map((c, i) => `<div class="inv-icon" onclick="useCard(event, ${p}, ${i})">${c.e}${c.val ? `<div class="inv-badge">+${c.val}</div>` : ''}</div>`).join('');
-                $(`cardP${p}`).classList.toggle('active', state.p === p);
-            });
-            $('dashboardPanel').className = `dashboard p${state.p}-active`;
+            const ids = groupIds().length ? groupIds() : (hostMode ? Object.keys(state.score).map(Number).sort((a, b) => a - b) : []);
+            $('playerSwitch').innerHTML = ids.map((id, i) => {
+                const active = shownId() === id;
+                const inv = (state.inv[id] || []).map((c, k) => `<div class="inv-icon" onclick="useCard(event, ${id}, ${k})">${c.e}${c.val ? `<div class="inv-badge">+${c.val}</div>` : ''}</div>`).join('');
+                return `<div class="player-card p${i % 3 + 1}${active ? ' active' : ''}" onclick="selectPlayer(${id})">
+                    <div class="player-content">
+                        <span class="p-avatar" onclick="showQR(event, ${id})" title="Приглашение">${avatarOf(id)}</span>
+                        <span class="score-display">${state.score[id] | 0}</span>
+                    </div>
+                    <div class="player-name">${nameOf(id)}${id === myId && !hostMode ? ' · я' : ''}</div>
+                    <div class="player-inv">${inv}</div>
+                    <div class="player-xp-container"><div class="player-xp-bar"><div class="player-xp-fill" style="width:${Math.min((state.score[id] / MAX_XP) * 100, 100)}%"></div></div></div>
+                </div>`;
+            }).join('');
+            $('dashboardPanel').className = `dashboard p${Math.max(0, ids.indexOf(shownId())) % 3 + 1}-active`;
             updateMobileBadge();
+            updateWatchBanner();
         }
+
+        function updateWatchBanner() {
+            const b = $('watchBanner');
+            if (!b) return;
+            b.style.display = viewId ? 'block' : 'none';
+            if (viewId) $('watchName').textContent = nameOf(viewId);
+        }
+
+        window.stopWatching = () => { viewId = 0; updateUI(); if (window.innerWidth <= 768) switchView('wheel'); };
 
         function updateUI() {
             renderSkills();
@@ -672,7 +737,10 @@ catch(e) { console.warn('Corrupt localStorage, reset:', e); state = getDefaultSt
         }
 
         window.closeCardModal = () => { $('luckyOverlay').classList.remove('active'); playClick(); };
-        window.openSettings = () => { $('settingsOverlay').classList.add('active'); playClick(); };
+        window.openSettings = () => {
+            $('hostToggle').checked = hostMode;
+            $('settingsOverlay').classList.add('active'); playClick();
+        };
         window.closeSettings = () => { $('settingsOverlay').classList.remove('active'); playClick(); };
 
         window.switchView = function(view) {
@@ -682,20 +750,21 @@ catch(e) { console.warn('Corrupt localStorage, reset:', e); state = getDefaultSt
             document.querySelectorAll('.det-letter').forEach(l => l.classList.toggle('active', l.dataset.view === view));
             localStorage.setItem('detGame_mobileView', view);
             if (view === 'wheel') setTimeout(() => setPos(curIdx), 50);
-            if (view === 'players' && cloudReady) pullAll(false).then(updateUI).catch(() => {});
+            if (view === 'players' && cloudReady) loadFriends().then(() => loadGroup(false)).then(updateUI).catch(() => {});
         };
 
         function updateMobileBadge() {
-            const badge = document.getElementById('mobileBadge');
+            const badge = $('mobileBadge');
             if (!badge) return;
-            const avatars = { 1: '🦉', 2: '🦊', 3: '🐼' };
-            document.getElementById('badgeAvatar').textContent = avatars[state.p];
-            document.getElementById('badgeScore').textContent = state.score[state.p];
-            badge.className = 'mobile-player-badge p' + state.p;
+            const id = shownId();
+            $('badgeAvatar').textContent = avatarOf(id);
+            $('badgeScore').textContent = state.score[id] | 0;
+            badge.className = 'mobile-player-badge p' + (id % 3 + 1);
         }
+
         window.forcePull = async () => {
             playClick();
-            if (!confirm('Pull: взять данные из облака?\n\nЛокальный прогресс игроков будет заменён данными Supabase.')) return;
+            if (!confirm('Pull: взять данные из облака?\n\nЛокальный прогресс будет заменён данными Supabase.')) return;
             savedAt = 0; localStorage.removeItem(LS_SAVED);
             cloudReady = false;
             const ok = await bootSync(true);
@@ -704,58 +773,190 @@ catch(e) { console.warn('Corrupt localStorage, reset:', e); state = getDefaultSt
 
         window.forcePush = async () => {
             playClick();
-            if (!confirm('Push: отправить данные этого устройства в облако?\n\nПерезапишутся строки всех игроков (1–' + PLAYERS + ').')) return;
+            const ids = groupIds().filter(canWrite);
+            if (!ids.length) return alert('Нет карточек, в которые можно писать.');
+            if (!confirm('Push: отправить данные этого устройства в облако?\n\nСтроки: ' + ids.map(nameOf).join(', '))) return;
             if (!cloudReady && !(await bootSync(false))) return alert('Нет связи с Supabase.\n\n' + lastError);
             setSyncStatus('saving');
             let done = 0;
-            for (const p of [1, 2, 3]) if (await pushPlayer(p, true)) done++;
-            setSyncStatus(done === PLAYERS ? 'synced' : 'error', 'Отправлено строк: ' + done + ' из ' + PLAYERS);
-            alert(done === PLAYERS ? 'Готово. Облако совпадает с этим устройством.' : 'Отправлено ' + done + ' из ' + PLAYERS + '.\n\n' + lastError);
+            for (const id of ids) if (await pushPlayer(id, true)) done++;
+            setSyncStatus(done === ids.length ? 'synced' : 'error', 'Отправлено строк: ' + done + ' из ' + ids.length);
+            alert(done === ids.length ? 'Готово. Облако совпадает с этим устройством.' : 'Отправлено ' + done + ' из ' + ids.length + '.\n\n' + lastError);
         };
 
         window.openResetConfirm = () => { closeSettings(); $('resetConfirmOverlay').classList.add('active'); };
         window.confirmResetProgress = async () => {
             state = getDefaultState();
-            [1, 2, 3].forEach(p => { state.prog[p] = {}; skills.forEach(s => state.prog[p][s.id] = 0); });
+            groupIds().forEach(ensurePlayer);
+            viewId = 0;
+            state.p = myId || state.p;
             savedAt = Date.now(); localStorage.setItem(LS_SAVED, savedAt);
             try { localStorage.setItem(LS_STATE, JSON.stringify(state)); } catch (e) {}
             clearTimeout(syncTimer);
             updateUI(); $('resetConfirmOverlay').classList.remove('active'); playClick();
-            if (!cloudReady) { setSyncStatus('local', 'Сброс сохранён на устройстве, облако недоступно'); return; }
-            for (const p of [1, 2, 3]) await pushPlayer(p, true);
-            setSyncStatus('synced', 'Сброс применён ко всем строкам Supabase');
+            if (!cloudReady) { setSyncStatus('local', 'Сброс сохранён на устройстве'); return; }
+            for (const id of groupIds().filter(canWrite)) await pushPlayer(id, true);
+            setSyncStatus('synced', 'Сброс применён');
         };
 
-        window.switchPlayer = p => {
-            if (!(p >= 1 && p <= PLAYERS) || p === state.p) return;
+        window.selectPlayer = id => {
             playClick();
-            const prev = state.p;
-            state.p = p;
-            localStorage.setItem(LS_LINK, p);
-            save();
-            if (cloudReady) pushPlayer(prev);
+            if (viewId) viewId = 0;
+            if (canWrite(id)) {
+                if (id === state.p) { updateUI(); return; }
+                const prev = state.p;
+                state.p = id;
+                save();
+                if (cloudReady && prev !== id) pushPlayer(prev);
+                updateUI();
+                if (window.innerWidth <= 768) switchView('wheel');
+                return;
+            }
+            viewId = id;
             updateUI();
-            if (window.innerWidth <= 768) switchView('wheel');
+            if (window.innerWidth <= 768) switchView('progress');
         };
-        window.showQR = (e, pId) => { e.stopPropagation(); playClick(); $('qrPlayerId').textContent = pId; $('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`https://m4dsw4ds.github.io/det-practice-wheel/?player=${pId}`)}&color=131f24&bgcolor=ffffff`; $('qrOverlay').classList.add('active'); };
-        
+
+        window.showQR = (e, pId) => {
+            e.stopPropagation(); playClick();
+            const token = (meta[pId] && meta[pId].token) || '';
+            const url = token ? `https://m4dsw4ds.github.io/det-practice-wheel/?join=${token}` : `https://m4dsw4ds.github.io/det-practice-wheel/?player=${pId}`;
+            $('qrPlayerId').textContent = nameOf(pId);
+            $('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}&color=131f24&bgcolor=ffffff`;
+            $('qrCode').textContent = token ? 'Код: ' + token : 'Код появится после синхронизации';
+            $('qrOverlay').classList.add('active');
+        };
+
         window.useCard = (e, pId, idx) => {
-            e.stopPropagation(); playClick(); if (state.p !== pId) return alert("Not your turn!");
-            const card = state.inv[pId][idx]; if (card.label === 'SHIELD') return alert("Shield is passive!");
-            if (card.label === 'LUCKY BREAK') { 
-                $('luckyGrid').innerHTML = skills.map(s => `<button class="lucky-btn" ${state.prog[state.p][s.id]>=6?'disabled':''} onclick="pickLucky('${s.id}')">${s.e} ${s.l} (${state.prog[state.p][s.id]}/6)</button>`).join(''); 
-                $('luckyOverlay').classList.add('active'); 
-            } else { 
-                showEventModal(card.e, card.label, card.d, 'var(--sys-gold)', 'CLAIM REWARD', null); playWin('gold'); 
-                state.inv[pId].splice(idx, 1); save(); updateUI(); 
+            e.stopPropagation(); playClick();
+            if (!canWrite(pId)) return alert('Это чужая карточка — только просмотр.');
+            if (state.p !== pId) return alert('Not your turn!');
+            const card = state.inv[pId][idx]; if (!card) return;
+            if (card.label === 'SHIELD') return alert('Shield is passive!');
+            if (card.label === 'LUCKY BREAK') {
+                $('luckyGrid').innerHTML = skills.map(s => `<button class="lucky-btn" ${state.prog[state.p][s.id] >= 6 ? 'disabled' : ''} onclick="pickLucky('${s.id}')">${s.e} ${s.l} (${state.prog[state.p][s.id]}/6)</button>`).join('');
+                $('luckyOverlay').classList.add('active');
+            } else {
+                showEventModal(card.e, card.label, card.d, 'var(--sys-gold)', 'CLAIM REWARD', null); playWin('gold');
+                state.inv[pId].splice(idx, 1); save(); updateUI();
             }
         };
-        window.pickLucky = (skillId) => { 
-            const s = skills.find(x => x.id === skillId); 
-            state.inv[state.p] = state.inv[state.p].filter(c => c.label !== 'LUCKY BREAK'); 
-            save(); updateUI(); $('luckyOverlay').classList.remove('active'); 
-            winIdx = allSectors.findIndex(x => x.id === skillId); 
-            startTask(s); 
+        window.pickLucky = (skillId) => {
+            const s = skills.find(x => x.id === skillId);
+            state.inv[state.p] = state.inv[state.p].filter(c => c.label !== 'LUCKY BREAK');
+            save(); updateUI(); $('luckyOverlay').classList.remove('active');
+            winIdx = allSectors.findIndex(x => x.id === skillId);
+            startTask(s);
+        };
+
+        // ==== ДРУЗЬЯ: своя карточка, код-приглашение, подключение ====
+        let pickedAvatar = AVATARS[0];
+
+        function renderAvatarPick() {
+            $('avatarPick').innerHTML = AVATARS.map(a => `<button class="avatar-opt${a === pickedAvatar ? ' sel' : ''}" onclick="pickAvatar('${a}')">${a}</button>`).join('');
+        }
+        window.pickAvatar = a => { pickedAvatar = a; renderAvatarPick(); playClick(); };
+        window.openIdentity = () => { renderAvatarPick(); $('identityOverlay').classList.add('active'); };
+
+        const tokenFrom = raw => {
+            const m = String(raw || '').match(/[?&](?:join|player)=([A-Za-z0-9]+)/);
+            return m ? m[1] : String(raw || '').replace(/[^A-Za-z0-9]/g, '');
+        };
+
+        async function bindMe(row) {
+            myId = row.player_id;
+            localStorage.setItem(LS_MY, myId);
+            localStorage.setItem(LS_MIGR, '1');
+            applyRow(row);
+            if (!canWrite(state.p)) state.p = myId;
+            $('identityOverlay').classList.remove('active');
+        }
+
+        window.createMe = async () => {
+            const name = ($('identName').value || '').trim().slice(0, 14) || ('Игрок ' + Date.now() % 1000);
+            try {
+                const r = await api('player_data?select=*', {
+                    method: 'POST',
+                    headers: { 'Prefer': 'return=representation' },
+                    body: JSON.stringify({ name, avatar: pickedAvatar })
+                });
+                if (!r.ok) throw new Error('HTTP ' + r.status + ' · ' + (await r.text()).slice(0, 140));
+                const row = (await r.json())[0];
+                await bindMe(row);
+                state.p = myId;
+                await finishJoin();
+                await bootSync(true);
+            } catch (e) { alert('Не удалось создать карточку.\n\n' + e.message); }
+        };
+
+        window.loginByCode = async () => {
+            const token = tokenFrom($('identCode').value);
+            if (!token) return alert('Введи код своей карточки');
+            try {
+                const r = await api(`player_data?token=eq.${encodeURIComponent(token)}&select=*`);
+                const row = (await r.json())[0];
+                if (!row) return alert('Код не найден. Проверь ссылку.');
+                await bindMe(row);
+                state.p = myId;
+                await bootSync(true);
+            } catch (e) { alert('Ошибка: ' + e.message); }
+        };
+
+        async function connectTo(token) {
+            const r = await api(`player_data?token=eq.${encodeURIComponent(token)}&select=*`);
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            const row = (await r.json())[0];
+            if (!row) throw new Error('код не найден');
+            if (row.player_id === myId) throw new Error('это твой собственный код');
+            const w = await api('links?on_conflict=owner_id,friend_id', {
+                method: 'POST',
+                headers: { 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+                body: JSON.stringify([{ owner_id: myId, friend_id: row.player_id }, { owner_id: row.player_id, friend_id: myId }])
+            });
+            if (!w.ok) throw new Error('HTTP ' + w.status + ' · ' + (await w.text()).slice(0, 140));
+            meta[row.player_id] = { name: row.name || '', avatar: row.avatar || '🦉', token: row.token || '' };
+            if (!friendIds.includes(row.player_id)) friendIds.push(row.player_id);
+            return row;
+        }
+
+        async function finishJoin() {
+            const token = pendingJoin; pendingJoin = '';
+            if (!token || !myId) return;
+            try {
+                const row = await connectTo(token);
+                await bootSync(false);
+                alert('Ты подключён к ' + (row.name || 'игроку') + '.');
+            } catch (e) { alert('Не удалось подключиться: ' + e.message); }
+        }
+
+        window.joinByCode = async () => {
+            const token = tokenFrom($('identCode').value);
+            if (!token) return alert('Введи код или ссылку друга');
+            if (!myId) { pendingJoin = token; return alert('Сначала создай свою карточку — код друга подключится сразу после.'); }
+            try {
+                const row = await connectTo(token);
+                $('identityOverlay').classList.remove('active');
+                await bootSync(false);
+                alert('Ты подключён к ' + (row.name || 'игроку') + '.');
+            } catch (e) { alert('Не удалось подключиться: ' + e.message); }
+        };
+
+        window.renameMe = () => {
+            const id = canWrite(state.p) ? state.p : myId;
+            if (!id) return window.openIdentity();
+            const name = prompt('Имя карточки (до 14 символов):', (meta[id] && meta[id].name) || '');
+            if (name == null) return;
+            meta[id] = Object.assign({ name: '', avatar: '🦉', token: '' }, meta[id], { name: name.trim().slice(0, 14) });
+            updateUI();
+            if (cloudReady) api(`player_data?player_id=eq.${id}`, { method: 'PATCH', headers: { 'Prefer': 'return=minimal' }, body: JSON.stringify({ name: meta[id].name }) }).catch(() => {});
+        };
+
+        window.toggleHost = on => {
+            hostMode = !!on;
+            localStorage.setItem(LS_HOST, hostMode ? '1' : '0');
+            if (!hostMode) { viewId = 0; if (myId) state.p = myId; }
+            if (hostMode && !myId) return window.openIdentity();
+            updateUI();
         };
 
 
@@ -822,7 +1023,9 @@ catch(e) { console.warn('Corrupt localStorage, reset:', e); state = getDefaultSt
         }
 
         function executeSpin() {
-            if (isSpinning) return; initAudio(); playStart();
+            if (isSpinning) return;
+            if (viewId) { viewId = 0; updateUI(); }
+            initAudio(); playStart();
             if (curIdx >= (REPEATS - 2) * allSectors.length) {
                 curIdx = Math.floor(REPEATS / 2) * allSectors.length + (curIdx % allSectors.length);
             }
@@ -908,12 +1111,16 @@ window.addEventListener('keydown', (e) => {
             return;
         case 's': case 'S': case 'ы': case 'Ы':
             toggleSound(); return;
-        case 'ArrowRight': case 'ArrowDown':
-            if (!activeModal) { e.preventDefault(); switchPlayer(state.p === 3 ? 1 : state.p + 1); }
+        case 'ArrowRight': case 'ArrowDown': case 'ArrowLeft': case 'ArrowUp': {
+            if (activeModal) return;
+            e.preventDefault();
+            const ids = groupIds().filter(canWrite);
+            if (ids.length < 2) return;
+            const i = Math.max(0, ids.indexOf(state.p));
+            const next = (k === 'ArrowRight' || k === 'ArrowDown') ? (i + 1) % ids.length : (i + ids.length - 1) % ids.length;
+            selectPlayer(ids[next]);
             return;
-        case 'ArrowLeft': case 'ArrowUp':
-            if (!activeModal) { e.preventDefault(); switchPlayer(state.p === 1 ? 3 : state.p - 1); }
-            return;
+        }
         case 'Enter': case ' ':
             e.preventDefault();
             if ($('modalOverlay').classList.contains('active')) {
@@ -941,11 +1148,12 @@ window.addEventListener('keydown', (e) => {
         
 
         window.addEventListener('load', () => {
-            const urlPlayer = parseInt(new URLSearchParams(location.search).get('player'));
-            if ([1, 2, 3].includes(urlPlayer)) localStorage.setItem(LS_LINK, urlPlayer);
-            const linked = parseInt(localStorage.getItem(LS_LINK));
-            if ([1, 2, 3].includes(urlPlayer)) state.p = urlPlayer;
-            else if ([1, 2, 3].includes(linked)) state.p = linked;
+            const params = new URLSearchParams(location.search);
+            initIdentity();
+            const urlPlayer = parseInt(params.get('player'));
+            if (urlPlayer && !myId) { myId = urlPlayer; localStorage.setItem(LS_MY, myId); localStorage.setItem(LS_MIGR, '1'); }
+            pendingJoin = params.get('join') || '';
+            if (myId) state.p = myId;
             renderDrum();
             updateUI();
             setTimeout(() => { curIdx = Math.floor(REPEATS / 2) * allSectors.length; setPos(curIdx); }, 50);
@@ -955,9 +1163,9 @@ window.addEventListener('keydown', (e) => {
                 el.addEventListener('click', () => switchView(el.dataset.view));
             });
             syncInd.onclick = () => runAutotest();
-            if (new URLSearchParams(location.search).get('autotest') === '1') { runAutotest(); return; }
-            migrateLocalOnce();
-            setTimeout(() => bootSync(true), 300);
+            if (params.get('autotest') === '1') { runAutotest(); return; }
+            if (!myId) openIdentity();
+            else setTimeout(async () => { await bootSync(true); if (pendingJoin) finishJoin(); }, 300);
             if (window.innerWidth <= 768) {
                 const layout = document.querySelector('.game-layout');
                 let tsX = 0, tsY = 0;
