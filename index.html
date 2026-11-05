@@ -216,6 +216,24 @@
         .avatar-opt { width: 42px; height: 42px; border-radius: 10px; border: 2px solid var(--border); background: #0d161a; font-size: 1.3rem; cursor: pointer; }
         .avatar-opt.sel { border-color: var(--sys-cyan); box-shadow: 0 0 10px rgba(0,229,255,0.5); }
         .ident-sep { color: #546e7a; font-size: 0.68rem; font-weight: 800; text-transform: uppercase; margin: 4px 0 10px; letter-spacing: 1px; }
+        .ident-warn { font-size: 0.68rem; color: var(--sys-gold); font-weight: 800; line-height: 1.45; margin: -8px 0 12px; text-align: left; }
+        .code-big { font-family: 'Share Tech Mono', monospace; font-size: 2rem; letter-spacing: 6px; color: var(--sys-gold); background: #0d161a; border: 2px dashed rgba(255,200,0,0.4); border-radius: 14px; padding: 14px 10px; margin: 4px 0 16px; width: 100%; text-align: center; }
+        .ov-card { max-width: 600px; margin: 0 auto; background: #131f24; padding: 20px; border-radius: 12px; border: 2px solid var(--ov-color); }
+        .ov-title { color: var(--ov-color); margin-bottom: 10px; font-family: 'Nunito', sans-serif; font-size: 1.4rem; font-weight: 900; }
+        .ov-pre { background: #000; color: #0f0; padding: 12px; border-radius: 8px; font-size: 11.5px; white-space: pre-wrap; word-break: break-all; user-select: text; font-family: monospace; line-height: 1.5; }
+        .ov-btn { width: 100%; margin-top: 8px; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: 900; font-family: 'Nunito', sans-serif; }
+        .ov-btn.retry { background: #ffc800; color: #000; }
+        .ov-btn.copy { background: #00e5ff; color: #000; }
+        .ov-btn.close { background: #ff4b4b; color: #fff; }
+        .friend-row { display: flex; align-items: center; gap: 10px; padding: 10px; background: #0d161a; border: 1px solid var(--border); border-radius: 10px; }
+        .friend-avatar { font-size: 1.8rem; }
+        .friend-name { flex: 1; text-align: left; font-weight: 800; font-size: 0.9rem; }
+        .friend-remove { width: auto; padding: 8px 14px; font-size: 0.8rem; }
+        .friend-empty { color: #78909c; font-weight: 700; padding: 20px; text-align: center; }
+        .scan-wrap { position: fixed; inset: 0; background: #05080b; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 18px; }
+        .scan-video { width: 100%; max-width: 420px; border-radius: 16px; background: #000; }
+        .scan-label { color: #fff; font-weight: 800; font-family: 'Nunito', sans-serif; }
+        .scan-cancel { padding: 12px 26px; border-radius: 12px; border: none; background: #ff4b4b; color: #fff; font-weight: 900; font-family: 'Nunito', sans-serif; cursor: pointer; }
         .qr-code { font-family: 'Share Tech Mono', monospace; font-size: 0.9rem; color: var(--sys-cyan); margin: 6px 0 14px; word-break: break-all; }
         .scan-hint { font-size: 0.68rem; color: #78909c; font-weight: 700; line-height: 1.4; margin-top: 4px; }
     </style>
@@ -267,6 +285,10 @@
                 <button class="btn host-btn" id="hostBtn" onclick="toggleHost()">🖥 Shared tablet</button>
                 <button class="btn btn-close" onclick="renameMe()">✏️ Change name</button>
                 <button class="btn btn-close" onclick="openFriendsManager()">👥 Manage friends</button>
+                <button class="btn btn-close" onclick="showMyCode()">🔑 My code</button>
+                <button class="btn btn-close" onclick="openJoin()">🤝 Join a friend</button>
+                <button class="btn btn-close" onclick="openSignin()">🔁 Switch account</button>
+                <button class="btn btn-close" id="installBtn" onclick="installApp()">📲 Install app</button>
                 <button class="btn btn-accept" onclick="syncNow()">🔄 Sync now</button>
                 <button class="btn btn-danger" onclick="openResetConfirm()">Reset progress</button>
                 <button class="btn btn-close" onclick="logoutMe()">🚪 Logout</button>
@@ -316,6 +338,7 @@
             <span class="modal-emoji">👋</span>
             <h2 class="modal-task-name">WHO ARE YOU?</h2>
             <p class="modal-desc" id="identityHint">Create your card — it shows up for everyone you connect with.</p>
+            <p class="ident-warn">New here? Create a card. Played before on another phone, browser or computer? Sign in with your code below — otherwise you get a second account.</p>
             <input id="identName" class="ident-input" maxlength="14" placeholder="Your name" autocomplete="off">
             <div class="avatar-pick" id="avatarPick"></div>
             <button class="btn btn-accept" onclick="createMe()">Create my card</button>
@@ -326,11 +349,51 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="codeOverlay">
+        <div class="modal" style="border-color: var(--sys-gold);">
+            <div class="modal-close-x" onclick="closeMyCode()">×</div>
+            <h2 class="modal-title" style="color: var(--sys-gold);">YOUR CODE</h2>
+            <p class="modal-desc">This code is your account on any device: iPhone, Android, computer. Save it.</p>
+            <div class="code-big" id="myCode">——</div>
+            <div class="action-btns">
+                <button class="btn btn-accept" onclick="copyMyCode()">Copy code</button>
+                <button class="btn btn-close" onclick="copyMyLink()">Copy personal link</button>
+                <button class="btn btn-close" onclick="closeMyCode()">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="joinOverlay">
+        <div class="modal" style="border-color: var(--sys-cyan);">
+            <div class="modal-close-x" onclick="closeJoin()">×</div>
+            <h2 class="modal-title" style="color: var(--sys-cyan);">JOIN A FRIEND</h2>
+            <p class="modal-desc">Paste the code or the link your friend sent you.</p>
+            <input id="joinCode" class="ident-input" placeholder="Code or link" autocomplete="off">
+            <div class="action-btns">
+                <button class="btn btn-accept" onclick="joinFromSettings()">Join</button>
+                <button class="btn btn-close" onclick="closeJoin()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="signinOverlay">
+        <div class="modal" style="border-color: var(--sys-gold);">
+            <div class="modal-close-x" onclick="closeSignin()">×</div>
+            <h2 class="modal-title" style="color: var(--sys-gold);">SIGN IN</h2>
+            <p class="modal-desc">Enter the code of the card you want to use on this device. The current card stays safe in the cloud.</p>
+            <input id="signinCode" class="ident-input" placeholder="Your code" autocomplete="off">
+            <div class="action-btns">
+                <button class="btn btn-accept" onclick="signInHere()">Sign in</button>
+                <button class="btn btn-close" onclick="closeSignin()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="qrOverlay">
         <div class="modal" id="qrModal" style="border-color: var(--sys-cyan);">
             <div class="modal-close-x" onclick="document.getElementById('qrOverlay').classList.remove('active')">×</div>
             <h2 class="modal-title" style="color: var(--sys-cyan);">INVITE FRIEND</h2>
-            <p class="modal-desc">Scan this QR code or copy the link below to join <b id="qrPlayerId">…</b>.</p>
+            <p class="modal-desc">Give this code to <b id="qrPlayerId">…</b>'s friend. In the app they tap <b>Settings → Join a friend</b> and paste it — that works even if the link opens in another browser.</p>
             <img src="" id="qrImage" class="qr-image" alt="QR Code" style="margin-bottom: 5px;">
             
             <div class="qr-code" id="qrCode" style="font-size: 1.4rem; font-weight: 900; color: var(--sys-gold); letter-spacing: 3px; margin: 10px 0;"></div>
@@ -638,12 +701,12 @@ document.addEventListener('touchstart', initAudio, { once: true });
             window._lastLog = text;
             const ov = document.createElement('div');
             ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:99999;padding:15px;overflow:auto;';
-            ov.innerHTML = `<div style="max-width:600px;margin:0 auto;background:#131f24;padding:20px;border-radius:12px;border:2px solid ${color};">
-                <h2 style="color:${color};margin-bottom:10px;font-family:Nunito;">${esc(title)}</h2>
-                <pre style="background:#000;color:#0f0;padding:12px;border-radius:8px;font-size:11.5px;white-space:pre-wrap;word-break:break-all;user-select:text;font-family:monospace;line-height:1.5;">${esc(text)}</pre>
-                ${opts.retry ? '<button onclick="this.parentElement.parentElement.remove();bootSync(true)" style="width:100%;margin-top:8px;padding:12px;background:#ffc800;color:#000;border:none;border-radius:8px;cursor:pointer;font-weight:900;font-family:Nunito;">Retry</button>' : ''}
-                <button onclick="window.copyLast()" style="margin-top:8px;width:100%;padding:12px;background:#00e5ff;color:#000;border:none;border-radius:8px;cursor:pointer;font-weight:900;font-family:Nunito;">📋 Copy</button>
-                <button onclick="this.parentElement.parentElement.remove()" style="margin-top:8px;width:100%;padding:12px;background:#ff4b4b;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:900;font-family:Nunito;">Close</button>
+            ov.innerHTML = `<div class="ov-card" style="--ov-color:${color}">
+                <h2 class="ov-title">${esc(title)}</h2>
+                <pre class="ov-pre">${esc(text)}</pre>
+                ${opts.retry ? '<button class="ov-btn retry" onclick="this.parentElement.parentElement.remove();bootSync(true)">Retry</button>' : ''}
+                <button class="ov-btn copy" onclick="window.copyLast()">📋 Copy</button>
+                <button class="ov-btn close" onclick="this.parentElement.parentElement.remove()">Close</button>
             </div>`;
             document.body.appendChild(ov);
             return ov;
@@ -810,10 +873,41 @@ document.addEventListener('touchstart', initAudio, { once: true });
             const hb = $('hostBtn');
             hb.classList.toggle('on', hostMode);
             hb.style.display = isDesktop ? 'none' : 'block';
+            $('installBtn').style.display = isStandalone() ? 'none' : 'block';
             $('appVer').textContent = 'DET Practice Wheel · v' + APP_VERSION;
             $('settingsOverlay').classList.add('active'); playClick();
         };
         window.closeSettings = () => { $('settingsOverlay').classList.remove('active'); playClick(); };
+
+        // ---- PWA install ----
+        let deferredPrompt = null;
+        const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+        const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt = e; });
+        window.installApp = async () => {
+            playClick();
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                try { await deferredPrompt.userChoice; } catch (e) {}
+                deferredPrompt = null;
+                return;
+            }
+            if (isStandalone()) return alert('Already installed.');
+            if (isIOS()) return showOverlay('Install on iPhone', '1. Open this page in Safari.\n2. Tap the Share button.\n3. Choose "Add to Home Screen".', { ok: true });
+            showOverlay('Install app', 'Open the browser menu (three dots) and choose "Install app" or "Add to Home screen".', { ok: true });
+        };
+
+        // ---- Analytics: три события, пишутся в Supabase, ошибки игнорируются ----
+        const track = (kind, extra = {}) => {
+            if (window.__testMode) return;
+            try {
+                api('events', {
+                    method: 'POST',
+                    headers: { 'Prefer': 'return=minimal' },
+                    body: JSON.stringify([Object.assign({ kind, player_id: myId || null }, extra)])
+                }).catch(() => {});
+            } catch (e) {}
+        };
 
         window.switchView = function(view, dir = 1) {
             const layout = document.querySelector('.game-layout');
@@ -978,10 +1072,10 @@ document.addEventListener('touchstart', initAudio, { once: true });
             catch (e) { return alert('Camera access denied or unavailable.'); }
 
             const wrap = document.createElement('div');
-            wrap.style.cssText = 'position:fixed;inset:0;background:#05080b;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:18px;';
-            wrap.innerHTML = `<video id="scanVideo" playsinline style="width:100%;max-width:420px;border-radius:16px;background:#000;"></video>
-                <div style="color:#fff;font-weight:800;font-family:Nunito;">Point at a friend's QR code</div>
-                <button id="scanCancel" style="padding:12px 26px;border-radius:12px;border:none;background:#ff4b4b;color:#fff;font-weight:900;font-family:Nunito;cursor:pointer;">Cancel</button>`;
+            wrap.className = 'scan-wrap';
+            wrap.innerHTML = `<video id="scanVideo" class="scan-video" playsinline></video>
+                <div class="scan-label">Point at a friend's QR code</div>
+                <button id="scanCancel" class="scan-cancel">Cancel</button>`;
             document.body.appendChild(wrap);
 
             const video = wrap.querySelector('#scanVideo');
@@ -1044,13 +1138,13 @@ document.addEventListener('touchstart', initAudio, { once: true });
             closeSettings();
             const list = $('friendsList');
             if (!friendIds.length) {
-                list.innerHTML = '<p style="color:#78909c;font-weight:700;padding:20px;text-align:center;">No friends yet.<br><br>Tap your avatar and share the invite link.</p>';
+                list.innerHTML = '<p class="friend-empty">No friends yet.<br><br>Tap your avatar and share the invite code.</p>';
             } else {
                 list.innerHTML = friendIds.map(id => `
-                    <div style="display:flex;align-items:center;gap:10px;padding:10px;background:#0d161a;border:1px solid var(--border);border-radius:10px;">
-                        <span style="font-size:1.8rem;">${esc(avatarOf(id))}</span>
-                        <span style="flex:1;text-align:left;font-weight:800;font-size:0.9rem;">${esc(nameOf(id))}</span>
-                        <button class="btn btn-danger" style="width:auto;padding:8px 14px;font-size:0.8rem;" onclick="removeFriend(null, ${id})">Remove</button>
+                    <div class="friend-row">
+                        <span class="friend-avatar">${esc(avatarOf(id))}</span>
+                        <span class="friend-name">${esc(nameOf(id))}</span>
+                        <button class="btn btn-danger friend-remove" onclick="removeFriend(null, ${id})">Remove</button>
                     </div>
                 `).join('');
             }
@@ -1120,6 +1214,62 @@ document.addEventListener('touchstart', initAudio, { once: true });
             $('identityOverlay').classList.remove('active');
         }
 
+        const myToken = () => (meta[myId] && meta[myId].token) || '';
+        const personalLink = () => `${location.origin}${location.pathname}?me=${myToken()}`;
+
+        window.closeMyCode = () => $('codeOverlay').classList.remove('active');
+        window.showMyCode = () => {
+            const t = myToken();
+            $('myCode').textContent = t || 'SYNC FIRST';
+            $('codeOverlay').classList.add('active');
+            playClick();
+        };
+        window.copyMyCode = () => {
+            const t = myToken();
+            if (!t) return alert('Wait for sync first.');
+            if (navigator.clipboard) navigator.clipboard.writeText(t).then(() => alert('Code copied. Save it somewhere safe.')).catch(() => prompt('Your code:', t));
+            else prompt('Your code:', t);
+        };
+        window.copyMyLink = () => {
+            const t = myToken();
+            if (!t) return alert('Wait for sync first.');
+            const url = personalLink();
+            if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => alert('Personal link copied. Open it on another device to sign in.')).catch(() => prompt('Personal link:', url));
+            else prompt('Personal link:', url);
+        };
+
+        window.openJoin = () => { $('joinCode').value = ''; $('joinOverlay').classList.add('active'); playClick(); };
+        window.closeJoin = () => $('joinOverlay').classList.remove('active');
+
+        window.openSignin = () => { $('signinCode').value = ''; $('signinOverlay').classList.add('active'); playClick(); };
+        window.closeSignin = () => $('signinOverlay').classList.remove('active');
+        window.signInHere = async () => {
+            const token = tokenFrom($('signinCode').value);
+            if (!token) return alert('Enter your code.');
+            try {
+                const r = await api(`player_data?token=eq.${encodeURIComponent(token)}&select=*`);
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                const row = (await r.json())[0];
+                if (!row) throw new Error('code not found');
+                await bindMe(row);
+                state.p = myId;
+                closeSignin();
+                await bootSync(true);
+                alert('Signed in as ' + nameOf(myId) + '.');
+            } catch (e) { alert('Could not sign in: ' + e.message); }
+        };
+        window.joinFromSettings = async () => {
+            const token = tokenFrom($('joinCode').value);
+            if (!token) return alert('Paste a code or link first.');
+            if (!myId) { pendingJoin = token; closeJoin(); openIdentity(); return; }
+            try {
+                const row = await connectTo(token);
+                closeJoin();
+                await bootSync(false);
+                alert('Connected to ' + (row.name || 'player') + '.');
+            } catch (e) { alert('Could not connect: ' + e.message); }
+        };
+
         window.createMe = async () => {
             const name = ($('identName').value || '').trim().slice(0, 14) || ('Player ' + Date.now() % 1000);
             try {
@@ -1134,6 +1284,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
                 state.p = myId;
                 await finishJoin();
                 await bootSync(true);
+                showMyCode();
             } catch (e) { alert('Could not create the card.\n\n' + e.message); }
         };
 
@@ -1164,6 +1315,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
             if (!w.ok) throw new Error('HTTP ' + w.status + ' · ' + (await w.text()).slice(0, 140));
             meta[row.player_id] = { name: row.name || '', avatar: row.avatar || '🦉', token: row.token || '' };
             if (!friendIds.includes(row.player_id)) friendIds.push(row.player_id);
+            track('friend_joined');
             return row;
         }
 
@@ -1252,6 +1404,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
             } else { state.score[state.p] += baseXP + bonusXP; buzz(20); }
             
             save(); updateUI(); closeModal();
+            track('task_done', { skill: sector.id });
 
             if (isMastered) {
                 buzz([30, 30, 30, 30, 100]);
@@ -1409,13 +1562,32 @@ window.addEventListener('keydown', (e) => {
             } catch (e) { return false; }
         }
 
+        // персональная ссылка ?me=<token>: привязывает это устройство к своей карточке
+        async function adoptMe(token) {
+            try {
+                const r = await api(`player_data?token=eq.${encodeURIComponent(token)}&select=*`);
+                if (!r.ok) return false;
+                const row = (await r.json())[0];
+                if (!row) return false;
+                await bindMe(row);
+                state.p = myId;
+                return true;
+            } catch (e) { return false; }
+        }
+
         window.addEventListener('load', async () => {
             const params = new URLSearchParams(location.search);
             initIdentity();
+            const meToken = params.get('me');
+            if (meToken && !myId) { await adoptMe(tokenFrom(meToken)); pendingJoin = ''; }
             const urlPlayer = parseInt(params.get('player'));
             if (urlPlayer && !myId && await claimPlayer(urlPlayer)) { myId = urlPlayer; safeStorage.setItem(LS_MY, myId); safeStorage.setItem(LS_MIGR, '1'); }
-            pendingJoin = params.get('join') || '';
+            pendingJoin = pendingJoin || params.get('join') || '';
             if (myId) state.p = myId;
+            if (!sessionStorage.getItem('detGame_sess')) {
+                sessionStorage.setItem('detGame_sess', '1');
+                setTimeout(() => track('first_open'), 1200);
+            }
             ensurePlayer(state.p);
             renderDrum();
             updateUI();
