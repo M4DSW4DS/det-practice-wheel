@@ -35,10 +35,7 @@
         .game-layout { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 1300px; gap: 20px; z-index: 1; transform: scale(0.98); }
         
         .right-panel { display: none; }
-        .dashboard { width: 100%; height: 100%; box-sizing: border-box; background: var(--panel); border: 2px solid var(--border); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; transition: 0.3s; overflow: hidden; }
-        .dashboard.p1-active { border-color: var(--p1-color); box-shadow: 0 0 15px rgba(255, 75, 75, 0.4); }
-        .dashboard.p2-active { border-color: var(--p2-color); box-shadow: 0 0 15px rgba(255, 150, 0, 0.4); }
-        .dashboard.p3-active { border-color: var(--p3-color); box-shadow: 0 0 15px rgba(206, 130, 255, 0.4); }
+        .dashboard { width: 100%; height: 100%; box-sizing: border-box; background: var(--panel); border: 2px solid var(--pc, var(--border)); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; transition: 0.3s; overflow: hidden; box-shadow: 0 0 15px var(--pc-soft, transparent); }
 
         .skills-grid { display: flex; flex-direction: column; justify-content: space-between; flex-grow: 1; height: 100%; gap: 2px; } 
         .skill-item { background: #0d161a; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.75rem; font-weight: 800; display: flex; justify-content: space-between; align-items: center; gap: 5px; height: 100%; }
@@ -48,19 +45,15 @@
         .skill-seg { flex: 1; background: #2b3d47; border-radius: 2px; transition: 0.3s; }
         .skill-seg.filled { background: var(--sys-cyan); box-shadow: 0 0 5px var(--sys-cyan); }
 
-        .player-switch { display: flex; gap: 10px; width: 100%; max-width: 650px; flex-wrap: wrap; justify-content: center; }
+        .player-switch { display: flex; gap: 10px; width: 100%; max-width: 650px; flex-wrap: nowrap; justify-content: center; }
         .player-card { flex: 1 1 180px; background: var(--panel); border: 2px solid var(--border); border-radius: 16px; padding: 10px; cursor: pointer; transition: 0.3s; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-width: 160px; position: relative; overflow: hidden; transform: scale(0.95); opacity: 0.6; }
         
-        .player-card.p1.active { transform: scale(1.03); opacity: 1; z-index: 10; border-color: var(--p1-color); box-shadow: 0 0 15px rgba(255, 75, 75, 0.3); background: radial-gradient(circle at center, rgba(255, 75, 75, 0.1) 0%, var(--panel) 80%); }
-        .player-card.p2.active { transform: scale(1.03); opacity: 1; z-index: 10; border-color: var(--p2-color); box-shadow: 0 0 15px rgba(255, 150, 0, 0.3); background: radial-gradient(circle at center, rgba(255, 150, 0, 0.1) 0%, var(--panel) 80%); }
-        .player-card.p3.active { transform: scale(1.03); opacity: 1; z-index: 10; border-color: var(--p3-color); box-shadow: 0 0 15px rgba(206, 130, 255, 0.3); background: radial-gradient(circle at center, rgba(206, 130, 255, 0.1) 0%, var(--panel) 80%); }
+        .player-card.active { transform: scale(1.03); opacity: 1; z-index: 10; border-color: var(--pc); box-shadow: 0 0 15px var(--pc-soft); background: radial-gradient(circle at center, var(--pc-soft) 0%, var(--panel) 80%); }
         
         .player-content { display: flex; align-items: center; justify-content: space-between; width: 100%; }
         
-        @keyframes pulse-glow { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 5px var(--player-color)); } 50% { transform: scale(1.1); filter: drop-shadow(0 0 15px var(--player-color)); } }
-        .player-card.p1.active .p-avatar { --player-color: var(--p1-color); animation: pulse-glow 2s infinite ease-in-out; }
-        .player-card.p2.active .p-avatar { --player-color: var(--p2-color); animation: pulse-glow 2s infinite ease-in-out; }
-        .player-card.p3.active .p-avatar { --player-color: var(--p3-color); animation: pulse-glow 2s infinite ease-in-out; }
+        @keyframes pulse-glow { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 5px var(--pc)); } 50% { transform: scale(1.1); filter: drop-shadow(0 0 15px var(--pc)); } }
+        .player-card.active .p-avatar { animation: pulse-glow 2s infinite ease-in-out; }
 
         .p-avatar { font-size: 2.4rem; line-height: 1; cursor: pointer; transition: 0.2s; }
         .score-display { font-family: 'Share Tech Mono', monospace; font-size: 1.4rem; background: rgba(0,0,0,0.5); padding: 2px 10px; border-radius: 6px; color: var(--sys-gold); border: 1px solid var(--sys-gold); box-shadow: 0 0 10px rgba(255, 200, 0, 0.2); min-width: 52px; text-align: center; }
@@ -120,15 +113,13 @@
         .xp-badge { display: inline-block; background: rgba(255,200,0,0.1); color: var(--sys-gold); padding: 6px 12px; border-radius: 8px; font-family: 'Share Tech Mono', monospace; font-weight: 900; margin-top: 10px; border: 1px solid var(--sys-gold); }
         .action-btns { display: flex; flex-direction: column; gap: 10px; width: 100%; }
         .btn { border: none; border-radius: 12px; font-weight: 900; cursor: pointer; text-transform: uppercase; transition: 0.1s; width: 100%; padding: 14px; font-size: 1rem; font-family: 'Nunito', sans-serif; letter-spacing: 1px;}
+        .btn:active { transform: translateY(4px); }
         .btn-accept { background: var(--sys-green); border-bottom: 4px solid var(--sys-green-dark); color: #fff; }
-        .btn-accept:active { transform: translateY(4px); border-bottom: 0; }
         .btn-accept:disabled { background: #2b3d47; border-bottom-color: #131f24; color: #78909c; cursor: not-allowed; }
         .btn-finish { background: var(--sys-cyan); border-bottom: 4px solid #0099aa; color: #000; display: none; }
-        .btn-finish:active { transform: translateY(4px); border-bottom: 0; }
         .btn-close { background: transparent; color: #78909c; border: 1px solid #2b3d47; }
         .btn-close:active { background: #131f24; color: #fff; border-color: var(--sys-cyan); }
         .btn-danger { background: #ff4b4b; border-bottom: 4px solid #cc0000; color: #fff; }
-        .btn-danger:active { transform: translateY(4px); border-bottom: 0; }
         
 
         
@@ -168,16 +159,14 @@
             .det-letter.active { opacity: 1; text-shadow: 0 0 20px var(--sys-cyan), 0 0 40px rgba(0, 229, 255, 0.6); transform: scale(1.5); }
             .det-sep { opacity: 0.4; }
             .top-controls { top: 8px; right: 8px; }
-            .game-layout { display: flex; flex-direction: column; gap: 6px; height: calc(100dvh - 50px); transform: none; padding: 0 5px; }
+            .game-layout { display: flex; flex-direction: column; gap: 6px; height: calc(100dvh - 50px); transform: none; padding: 0 5px; overflow-x: hidden; }
 
-            .mobile-player-badge { display: flex; gap: 6px; align-items: center; padding: 6px 14px; background: var(--panel); border: 2px solid var(--sys-cyan); border-radius: 20px; color: #fff; font-weight: 900; font-size: 0.9rem; cursor: pointer; font-family: 'Nunito'; position: fixed; top: 8px; left: 8px; z-index: 50; }
-            .mobile-player-badge.p1 { border-color: var(--p1-color); }
-            .mobile-player-badge.p2 { border-color: var(--p2-color); }
-            .mobile-player-badge.p3 { border-color: var(--p3-color); }
+            .mobile-player-badge { display: flex; gap: 6px; align-items: center; padding: 6px 14px; background: var(--panel); border: 2px solid var(--pc, var(--sys-cyan)); border-radius: 20px; color: #fff; font-weight: 900; font-size: 0.9rem; cursor: pointer; font-family: 'Nunito'; position: fixed; top: 8px; left: 8px; z-index: 50; }
 
             .player-switch { display: none; }
-            .game-layout.view-players .player-switch { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 15px; padding: 20px 20px 40px; flex: 1; width: 100%; overflow-y: auto; }
-            .game-layout.view-players .player-card { width: 100%; max-width: 320px; min-width: 0; flex: 0 0 auto; opacity: 1; transform: none; }
+            .game-layout.view-players .player-switch { display: flex; flex-direction: column; flex-wrap: nowrap; align-items: center; justify-content: flex-start; gap: 15px; padding: 20px 16px 40px; flex: 1; width: 100%; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+            .game-layout.view-players .player-card { width: 100%; max-width: 340px; min-width: 0; flex: 0 0 auto; opacity: 1; transform: none; }
+            .game-layout.view-players .player-card.active { transform: none; }
             .game-layout.view-players .drum-wrapper { display: none; }
             .game-layout.view-players .right-panel { display: none; }
 
@@ -202,6 +191,9 @@
         .modal.in-progress-mode { animation: pulse-border 1.5s infinite; }
 
         .player-name { font-size: 0.68rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; color: #b0bec5; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .player-meta { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; width: 100%; }
+        .player-ago { font-size: 0.58rem; font-weight: 800; color: #546e7a; white-space: nowrap; }
+        .app-ver { font-size: 0.6rem; color: #455a64; font-weight: 800; letter-spacing: 1px; margin-top: 6px; }
         .game-layout.watching .right-panel { display: flex; flex: 1; width: 100%; min-height: 0; }
         @media (max-width: 1199px) {
             .game-layout.watching .drum-wrapper, .game-layout.watching .player-switch { display: none; }
@@ -247,7 +239,7 @@
         </div>
 
         <div class="right-panel">
-            <div class="dashboard p1-active" id="dashboardPanel">
+            <div class="dashboard" id="dashboardPanel">
                 <div class="skills-grid" id="skillsGrid"></div>
             </div>
         </div>
@@ -268,6 +260,7 @@
                     <a onclick="forcePull()">Force pull</a>
                     <a onclick="forcePush()">Force push</a>
                 </div>
+                <div class="app-ver" id="appVer"></div>
             </div>
         </div>
     </div>
@@ -416,18 +409,26 @@ document.addEventListener('touchstart', initAudio, { once: true });
         const MAX_XP = 40000;
 
         const AVATARS = ['🦉', '🦊', '🐼', '🐯', '🐸', '🐙'];
-        const getDefaultState = () => ({ p: 1, score: {}, prog: {}, inv: {}, stolenBag: {} });
+        const APP_VERSION = '1.3';
+        const PC = [['#ff4b4b', 'rgba(255,75,75,0.18)'], ['#ff9600', 'rgba(255,150,0,0.18)'], ['#ce82ff', 'rgba(206,130,255,0.18)']];
+        const isMobile = () => window.innerWidth <= 768;
+        const ago = ts => {
+            if (!ts) return '';
+            const m = Math.round((Date.now() - new Date(ts).getTime()) / 60000);
+            if (!isFinite(m) || m < 1) return 'now';
+            return m < 60 ? m + 'm' : Math.round(m / 60) + 'h';
+        };
+        const getDefaultState = () => ({ p: 1, score: {}, prog: {}, inv: {} });
         let state;
         try { state = JSON.parse(localStorage.getItem('detGame_v23')) || getDefaultState(); }
         catch (e) { console.warn('Corrupt localStorage, reset:', e); state = getDefaultState(); }
-        state.score = state.score || {}; state.prog = state.prog || {}; state.inv = state.inv || {}; state.stolenBag = state.stolenBag || {};
+        state.score = state.score || {}; state.prog = state.prog || {}; state.inv = state.inv || {};
 
         const ensurePlayer = id => {
             if (!state.prog[id]) state.prog[id] = {};
             skills.forEach(s => { if (state.prog[id][s.id] === undefined) state.prog[id][s.id] = 0; });
             if (state.score[id] === undefined) state.score[id] = 0;
             if (!state.inv[id]) state.inv[id] = [];
-            if (state.stolenBag[id] === undefined) state.stolenBag[id] = 0;
         };
         [1, 2, 3].forEach(ensurePlayer);
 
@@ -435,7 +436,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
 
         // ==== SUPABASE: одна строка = один игрок, связи через links ====
         const LS_STATE = 'detGame_v23', LS_SAVED = 'detGame_savedAt', LS_SYNCED = 'detGame_syncedAt', LS_MY = 'detGame_myPlayer', LS_HOST = 'detGame_host', LS_MIGR = 'detGame_migrated';
-        let cloudReady = false, syncTimer = null, bootTimer = null, syncHideTimer = null, bannerShown = false, migratePending = false, lastError = '';
+        let cloudReady = false, syncTimer = null, bootTimer = null, syncHideTimer = null, retryDelay = 15000, bannerShown = false, migratePending = false, lastError = '';
         let savedAt = +(localStorage.getItem(LS_SAVED) || 0), syncedAt = +(localStorage.getItem(LS_SYNCED) || 0);
         const isDirty = () => savedAt > syncedAt;
 
@@ -464,19 +465,18 @@ document.addEventListener('touchstart', initAudio, { once: true });
 
         const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
-        const rowOf = p => ({ player_id: p, score: state.score[p] | 0, stolen_bag: (state.stolenBag && state.stolenBag[p]) | 0, progress: state.prog[p] || {}, inventory: state.inv[p] || [] });
+        const rowOf = p => ({ player_id: p, score: state.score[p] | 0, progress: state.prog[p] || {}, inventory: state.inv[p] || [] });
         const nameOf = id => (meta[id] && meta[id].name) || ('Player ' + id);
         const avatarOf = id => (meta[id] && meta[id].avatar) || '🦉';
 
         function applyRow(r) {
             const id = r.player_id;
-            meta[id] = { name: r.name || '', avatar: r.avatar || '🦉', token: r.token || '' };
+            meta[id] = { name: r.name || '', avatar: r.avatar || '🦉', token: r.token || '', updated_at: r.updated_at || '' };
             ensurePlayer(id);
             state.score[id] = r.score | 0;
             state.prog[id] = r.progress || {};
             skills.forEach(s => { if (state.prog[id][s.id] === undefined) state.prog[id][s.id] = 0; });
             state.inv[id] = r.inventory || [];
-            state.stolenBag[id] = r.stolen_bag | 0;
         }
 
         async function pushPlayer(p = state.p, quiet = false) {
@@ -527,7 +527,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
             if (!r.ok) throw new Error('HTTP ' + r.status + ' · ' + (await r.text()).slice(0, 140));
             const rows = await r.json();
             rows.forEach(row => {
-                if (keepMine && row.player_id === state.p) meta[row.player_id] = { name: row.name || '', avatar: row.avatar || '🦉', token: row.token || '' };
+                if (keepMine && row.player_id === state.p) meta[row.player_id] = { name: row.name || '', avatar: row.avatar || '🦉', token: row.token || '', updated_at: row.updated_at || '' };
                 else applyRow(row);
             });
             return rows;
@@ -542,6 +542,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
                 await loadFriends();
                 const rows = await loadGroup(wasDirty);
                 cloudReady = true;
+                retryDelay = 15000;
                 updateUI();
                 if (pending) {
                     for (const id of groupIds()) if (!(await pushPlayer(id, true))) throw new Error(lastError);
@@ -555,10 +556,11 @@ document.addEventListener('touchstart', initAudio, { once: true });
                 lastError = String(e.message || e);
                 if (cloudReady) { setSyncStatus('error', 'Cloud rejected the write: ' + lastError); return false; }
                 cloudReady = false;
-                setSyncStatus('local', 'No connection to Supabase: ' + lastError + '. Progress stays on this device, retrying every 15 s.');
+                setSyncStatus('local', 'No connection to Supabase: ' + lastError + '. Progress stays on this device, retrying in background.');
                 if (allowBanner && !bannerShown) { bannerShown = true; showSyncBanner(); }
                 clearTimeout(bootTimer);
-                bootTimer = setTimeout(() => { if (!cloudReady) bootSync(false); }, 15000);
+                bootTimer = setTimeout(() => { if (!cloudReady) bootSync(false); }, retryDelay);
+                retryDelay = Math.min(retryDelay * 2, 120000);
                 return false;
             }
         }
@@ -573,19 +575,29 @@ document.addEventListener('touchstart', initAudio, { once: true });
             migratePending = true; savedAt = Date.now(); localStorage.setItem(LS_SAVED, savedAt);
         }
 
+        function showOverlay(title, text, opts = {}) {
+            const ok = opts.ok !== false, color = ok ? '#00e5ff' : '#ff4b4b';
+            window._lastLog = text;
+            const ov = document.createElement('div');
+            ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:99999;padding:15px;overflow:auto;';
+            ov.innerHTML = `<div style="max-width:600px;margin:0 auto;background:#131f24;padding:20px;border-radius:12px;border:2px solid ${color};">
+                <h2 style="color:${color};margin-bottom:10px;font-family:Nunito;">${esc(title)}</h2>
+                <pre style="background:#000;color:#0f0;padding:12px;border-radius:8px;font-size:11.5px;white-space:pre-wrap;word-break:break-all;user-select:text;font-family:monospace;line-height:1.5;">${esc(text)}</pre>
+                ${opts.retry ? '<button onclick="this.parentElement.parentElement.remove();bootSync(true)" style="width:100%;margin-top:8px;padding:12px;background:#ffc800;color:#000;border:none;border-radius:8px;cursor:pointer;font-weight:900;font-family:Nunito;">Retry</button>' : ''}
+                <button onclick="window.copyLast()" style="margin-top:8px;width:100%;padding:12px;background:#00e5ff;color:#000;border:none;border-radius:8px;cursor:pointer;font-weight:900;font-family:Nunito;">📋 Copy</button>
+                <button onclick="this.parentElement.parentElement.remove()" style="margin-top:8px;width:100%;padding:12px;background:#ff4b4b;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:900;font-family:Nunito;">Close</button>
+            </div>`;
+            document.body.appendChild(ov);
+            return ov;
+        }
+        window.copyLast = () => {
+            const t = window._lastLog || '';
+            if (navigator.clipboard) navigator.clipboard.writeText(t).then(() => alert('Copied.')).catch(() => alert('Copy failed. Select the text manually.'));
+            else alert('Clipboard not available. Select the text manually.');
+        };
+
         function showSyncBanner() {
-            const overlay = document.createElement('div');
-            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(10,15,20,0.95);backdrop-filter:blur(5px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
-            overlay.innerHTML = `
-                <div style="background:var(--panel);border:2px solid #ffc800;border-radius:20px;padding:25px;max-width:400px;text-align:center;box-shadow:0 0 50px rgba(255,200,0,0.25);">
-                    <span style="font-size:3.4rem;display:block;margin-bottom:10px;">🟡</span>
-                    <h2 style="color:#ffc800;margin-bottom:12px;font-family:Nunito;text-transform:uppercase;">Local only</h2>
-                    <p style="color:#b0bec5;margin-bottom:8px;font-family:Nunito;font-weight:700;line-height:1.5;">Cloud is unreachable — progress is saved on this device.</p>
-                    <p style="color:#78909c;margin-bottom:18px;font-family:monospace;font-size:0.7rem;word-break:break-all;">${esc(String(lastError))}</p>
-                    <button onclick="this.parentElement.parentElement.remove();bootSync(true)" style="width:100%;padding:14px;background:#ffc800;color:#000;border:none;border-radius:12px;cursor:pointer;font-weight:900;font-family:Nunito;text-transform:uppercase;letter-spacing:1px;">Retry</button>
-                    <button onclick="this.parentElement.parentElement.remove()" style="margin-top:8px;width:100%;padding:12px;background:transparent;color:#78909c;border:1px solid #2b3d47;border-radius:12px;cursor:pointer;font-weight:800;font-family:Nunito;">Continue</button>
-                </div>`;
-            document.body.appendChild(overlay);
+            showOverlay('Local only', 'Cloud is unreachable — progress is saved on this device.\n\n' + lastError, { ok: false, retry: true });
         }
 
         const $ = id => document.getElementById(id);
@@ -616,19 +628,25 @@ document.addEventListener('touchstart', initAudio, { once: true });
         function renderPlayers() {
             const ids = groupIds().length ? groupIds() : (hostMode ? Object.keys(state.score).map(Number).sort((a, b) => a - b) : []);
             $('playerSwitch').innerHTML = ids.map((id, i) => {
-                const active = shownId() === id;
-                const inv = (state.inv[id] || []).map((c, k) => `<div class="inv-icon" onclick="useCard(event, ${id}, ${k})">${c.e}${c.val ? `<div class="inv-badge">+${c.val}</div>` : ''}</div>`).join('');
-                return `<div class="player-card p${i % 3 + 1}${active ? ' active' : ''}" onclick="selectPlayer(${id})">
+                const active = shownId() === id, [c, soft] = PC[i % 3];
+                const inv = (state.inv[id] || []).map((x, k) => `<div class="inv-icon" onclick="useCard(event, ${id}, ${k})">${x.e}${x.val ? `<div class="inv-badge">+${x.val}</div>` : ''}</div>`).join('');
+                return `<div class="player-card${active ? ' active' : ''}" style="--pc:${c};--pc-soft:${soft}" onclick="selectPlayer(${id})">
                     <div class="player-content">
                         <span class="p-avatar" onclick="showQR(event, ${id})" title="Invite">${esc(avatarOf(id))}</span>
                         <span class="score-display">${state.score[id] | 0}</span>
                     </div>
-                    <div class="player-name">${esc(nameOf(id))}${id === myId && !hostMode ? ' · me' : ''}</div>
+                    <div class="player-meta">
+                        <span class="player-name">${esc(nameOf(id))}${id === myId && !hostMode ? ' · me' : ''}</span>
+                        <span class="player-ago">${ago(meta[id] && meta[id].updated_at)}</span>
+                    </div>
                     <div class="player-inv">${inv}</div>
                     <div class="player-xp-container"><div class="player-xp-bar"><div class="player-xp-fill" style="width:${Math.min((state.score[id] / MAX_XP) * 100, 100)}%"></div></div></div>
                 </div>`;
             }).join('');
-            $('dashboardPanel').className = `dashboard p${Math.max(0, ids.indexOf(shownId())) % 3 + 1}-active`;
+            const dash = $('dashboardPanel'), [dc, ds] = PC[Math.max(0, ids.indexOf(shownId())) % 3];
+            dash.className = 'dashboard';
+            dash.style.setProperty('--pc', dc);
+            dash.style.setProperty('--pc-soft', ds);
             updateMobileBadge();
             syncWatchState();
         }
@@ -639,7 +657,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
             $('dashboardPanel').classList.toggle('watching', on);
         }
 
-        window.stopWatching = () => { viewId = 0; updateUI(); if (window.innerWidth <= 768) switchView('wheel'); };
+        window.stopWatching = () => { viewId = 0; updateUI(); if (isMobile()) switchView('wheel'); };
 
         function updateUI() {
             renderSkills();
@@ -697,31 +715,9 @@ document.addEventListener('touchstart', initAudio, { once: true });
             log(`\n${pass ? '✅ PASS — read/write path is healthy' : '❌ FAIL — see above'} · ${Date.now() - t0}ms · mode: ${cloudReady ? 'cloud' : 'local only'}`);
 
             const text = L.join('\n');
-            
-            window._autotestText = text;
-
-            const overlay = document.createElement('div');
-            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:99999;padding:15px;overflow:auto;';
-            const color = pass ? '#00e5ff' : '#ff4b4b';
-            overlay.innerHTML = `
-                <div style="max-width:600px;margin:0 auto;background:#131f24;padding:20px;border-radius:12px;border:2px solid ${color};">
-                    <h2 style="color:${color};margin-bottom:10px;font-family:Nunito;">${pass ? '✅' : '❌'} AUTOTEST ${pass ? 'PASS' : 'FAIL'}</h2>
-                    <pre style="background:#000;color:#0f0;padding:12px;border-radius:8px;font-size:11px;white-space:pre-wrap;word-break:break-all;user-select:text;font-family:monospace;line-height:1.5;">${text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
-                    <button onclick="window.copyAutotest()" style="margin-top:8px;width:100%;padding:12px;background:#00e5ff;color:#000;border:none;border-radius:8px;cursor:pointer;font-weight:900;font-family:Nunito;">📋 Copy</button>
-                    <button onclick="this.parentElement.parentElement.remove()" style="margin-top:8px;width:100%;padding:12px;background:#ff4b4b;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:900;font-family:Nunito;">Close</button>
-                </div>`;
-            document.body.appendChild(overlay);
+            showOverlay((pass ? '✅' : '❌') + ' SYNC CHECK ' + (pass ? 'PASS' : 'FAIL'), text, { ok: pass });
             return pass;
         }
-
-        window.copyAutotest = function() {
-            const text = window._autotestText || '';
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(text).then(() => alert('Copied.')).catch(() => alert('Copy failed. Select text manually.'));
-            } else {
-                alert('Clipboard not available. Select text manually.');
-            }
-        };
 
         // ==== SELF-TEST (?selftest=1): прогон UI на фейковом API, база не трогается ====
         const fakeDb = new Map();
@@ -779,13 +775,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
             const pass = results.every(r => r.startsWith('✅'));
             const text = '=== SELF-TEST ' + (pass ? 'PASS' : 'FAIL') + ' ===\n' + results.join('\n');
             console.log(text);
-            const ov = document.createElement('div');
-            ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:99999;padding:15px;overflow:auto;';
-            ov.innerHTML = `<div style="max-width:600px;margin:0 auto;background:#131f24;padding:20px;border-radius:12px;border:2px solid ${pass ? '#58cc02' : '#ff4b4b'};">
-                <h2 style="color:${pass ? '#58cc02' : '#ff4b4b'};margin-bottom:10px;font-family:Nunito;">${pass ? '✅ SELF-TEST PASS' : '❌ SELF-TEST FAIL'}</h2>
-                <pre style="background:#000;color:#0f0;padding:12px;border-radius:8px;font-size:12px;white-space:pre-wrap;font-family:monospace;line-height:1.6;">${esc(text)}</pre>
-                <button onclick="this.parentElement.parentElement.remove()" style="width:100%;margin-top:8px;padding:12px;background:#00e5ff;color:#000;border:none;border-radius:8px;font-weight:900;font-family:Nunito;cursor:pointer;">Close</button></div>`;
-            document.body.appendChild(ov);
+            showOverlay((pass ? '✅ SELF-TEST PASS' : '❌ SELF-TEST FAIL'), text, { ok: pass });
             return pass;
         };
 
@@ -814,11 +804,12 @@ document.addEventListener('touchstart', initAudio, { once: true });
             const hb = $('hostBtn');
             hb.classList.toggle('on', hostMode);
             hb.style.display = isDesktop ? 'none' : 'block';
+            $('appVer').textContent = 'DET Practice Wheel · v' + APP_VERSION;
             $('settingsOverlay').classList.add('active'); playClick();
         };
         window.closeSettings = () => { $('settingsOverlay').classList.remove('active'); playClick(); };
 
-        window.switchView = function(view) {
+        window.switchView = function(view, dir = 1) {
             const layout = document.querySelector('.game-layout');
             if (viewId && view !== 'progress') { viewId = 0; syncWatchState(); updateUI(); }
             layout.classList.remove('view-players', 'view-wheel', 'view-progress');
@@ -827,15 +818,23 @@ document.addEventListener('touchstart', initAudio, { once: true });
             localStorage.setItem('detGame_mobileView', view);
             if (view === 'wheel') setTimeout(() => setPos(curIdx), 50);
             if (view === 'players' && cloudReady) loadFriends().then(() => loadGroup(false)).then(updateUI).catch(() => {});
+            if (isMobile()) {
+                const panel = view === 'players' ? $('playerSwitch') : view === 'wheel' ? $('drumWrapper') : document.querySelector('.right-panel');
+                if (panel && panel.animate) panel.animate(
+                    [{ transform: `translateX(${dir * 28}px)`, opacity: 0.3 }, { transform: 'translateX(0)', opacity: 1 }],
+                    { duration: 240, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' }
+                );
+            }
         };
 
         function updateMobileBadge() {
             const badge = $('mobileBadge');
             if (!badge) return;
-            const id = shownId(), ids = groupIds();
+            const id = shownId(), [c] = PC[Math.max(0, groupIds().indexOf(id)) % 3];
             $('badgeAvatar').textContent = avatarOf(id);
             $('badgeScore').textContent = state.score[id] | 0;
-            badge.className = 'mobile-player-badge p' + ((Math.max(0, ids.indexOf(id)) % 3) + 1);
+            badge.style.setProperty('--pc', c);
+            badge.className = 'mobile-player-badge';
         }
 
         window.forcePull = async () => {
@@ -871,7 +870,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
         window.confirmResetProgress = async () => {
             const id = state.p;
             ensurePlayer(id);
-            state.score[id] = 0; state.inv[id] = []; state.stolenBag[id] = 0;
+            state.score[id] = 0; state.inv[id] = [];
             skills.forEach(s => { state.prog[id][s.id] = 0; });
             $('resetConfirmOverlay').classList.remove('active'); playClick();
             save(); updateUI();
@@ -892,12 +891,12 @@ document.addEventListener('touchstart', initAudio, { once: true });
                 save();
                 if (cloudReady && prev !== id) pushPlayer(prev);
                 updateUI();
-                if (window.innerWidth <= 768) switchView('wheel');
+                if (isMobile()) switchView('wheel');
                 return;
             }
             viewId = id;
             updateUI();
-            if (window.innerWidth <= 768) switchView('progress');
+            if (isMobile()) switchView('progress');
         };
 
         window.badgeTap = () => { if (viewId) return stopWatching(); switchView('players'); };
@@ -1084,8 +1083,6 @@ document.addEventListener('touchstart', initAudio, { once: true });
             }
 
             if (stolen) {
-                if (!state.stolenBag) state.stolenBag = { 1: 0, 2: 0, 3: 0 };
-                state.stolenBag[state.p] += baseXP + bonusXP;
                 buzz([200, 100, 200, 100, 200]);
                 showEventModal('🐈‍⬛', 'CAT IN A BAG', `The Cat stole your <b>+${baseXP} XP</b>!<br><br>But you keep your progress (${state.prog[state.p][sector.id]}/6).<br><br><span style=\"opacity:0.7\">🐈‍⬛ Stashed: +${baseXP} XP in the bag</span>`, 'var(--p1-color)', 'Damn Cat 😿', null); playWin('cat'); 
             } else { state.score[state.p] += baseXP + bonusXP; buzz(20); }
@@ -1112,7 +1109,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
 
         function executeSpin() {
             if (isSpinning) return;
-            if (viewId) { viewId = 0; updateUI(); if (window.innerWidth <= 768) switchView('wheel'); }
+            if (viewId) { viewId = 0; updateUI(); if (isMobile()) switchView('wheel'); }
             ensurePlayer(state.p);
             initAudio(); playStart(); buzz(30);
             if (curIdx >= (REPEATS - 2) * allSectors.length) {
@@ -1250,7 +1247,7 @@ window.addEventListener('keydown', (e) => {
             updateUI();
             setTimeout(() => { curIdx = Math.floor(REPEATS / 2) * allSectors.length; setPos(curIdx); }, 50);
             window.addEventListener('resize', () => setPos(curIdx));
-            if (window.innerWidth <= 768) switchView(localStorage.getItem('detGame_mobileView') || 'wheel');
+            if (isMobile()) switchView(localStorage.getItem('detGame_mobileView') || 'wheel');
             document.querySelectorAll('.det-letter').forEach(el => {
                 el.addEventListener('click', () => switchView(el.dataset.view));
             });
@@ -1259,7 +1256,7 @@ window.addEventListener('keydown', (e) => {
             if (params.get('selftest') === '1') { runSelfTest(); return; }
             if (!myId) openIdentity();
             else setTimeout(async () => { await bootSync(true); if (pendingJoin) finishJoin(); }, 300);
-            if (window.innerWidth <= 768) {
+            if (isMobile()) {
                 const layout = document.querySelector('.game-layout');
                 let tsX = 0, tsY = 0;
                 layout.addEventListener('touchstart', (e) => {
@@ -1274,7 +1271,7 @@ window.addEventListener('keydown', (e) => {
                         const cur = views.find(v => layout.classList.contains('view-' + v)) || views[0];
                         const idx = Math.max(0, views.indexOf(cur));
                         const nextIdx = dx < 0 ? (idx + 1) % views.length : (idx + views.length - 1) % views.length;
-                        switchView(views[nextIdx]);
+                        switchView(views[nextIdx], dx < 0 ? 1 : -1);
                         buzz(12);
                     }
                 }, { passive: true });
