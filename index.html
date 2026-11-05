@@ -524,7 +524,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
         const MAX_XP = 40000;
 
         const AVATARS = ['🦉', '🦊', '🐼', '🐯', '🐸', '🐙'];
-        const APP_VERSION = '1.7';
+        const APP_VERSION = '1.8';
         const PC = [['#ff4b4b', 'rgba(255,75,75,0.18)'], ['#ff9600', 'rgba(255,150,0,0.18)'], ['#ce82ff', 'rgba(206,130,255,0.18)']];
         const isMobile = () => window.innerWidth <= 768;
         const ago = ts => {
@@ -1348,7 +1348,25 @@ document.addEventListener('touchstart', initAudio, { once: true });
             if (name == null) return;
             meta[id] = Object.assign({ name: '', avatar: '🦉', token: '' }, meta[id], { name: name.trim().slice(0, 14) });
             updateUI();
-            if (cloudReady) api(`player_data?player_id=eq.${id}`, { method: 'PATCH', headers: { 'Prefer': 'return=minimal' }, body: JSON.stringify({ name: meta[id].name }) }).catch(() => {});
+            if (!cloudReady) { setSyncStatus('local', 'Name saved on this device'); return; }
+            // upsert, не PATCH: PostgREST молча отвечает 204 на несуществующую строку
+            const payload = Object.assign(rowOf(id), { name: meta[id].name, avatar: meta[id].avatar });
+            api('player_data?on_conflict=player_id', {
+                method: 'POST',
+                headers: { 'Prefer': 'resolution=merge-duplicates,return=representation' },
+                body: JSON.stringify([payload])
+            }).then(r => {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.json();
+            }).then(rows => {
+                const row = (rows && rows[0]) || {};
+                if (row.updated_at) meta[id].updated_at = row.updated_at;
+                setSyncStatus('synced', 'Name saved · ' + (row.updated_at || ''));
+                updateUI();
+            }).catch(e => {
+                lastError = String(e.message || e);
+                setSyncStatus('error', 'Rename failed: ' + lastError);
+            });
         };
 
         window.toggleHost = () => {

@@ -1,4 +1,4 @@
-# DET Practice Wheel — Testing Checklist (v1.4)
+# DET Practice Wheel — Testing Checklist (v1.8)
 
 > Живой файл. Отмечай после каждого блока фиксов.
 > Легенда: `[ ]` — не проверено, `[x]` — ок, `[!]` — баг.
@@ -62,6 +62,7 @@
 - [ ] Android Chrome: кнопка Scan видна, открывается камера с превью, QR считывается.
 - [ ] Manage friends → Remove: друг исчезает и у тебя, и у него (после обновления).
 - [ ] Если DELETE-политики нет — Remove показывает ошибку, а не врёт.
+- [ ] С DELETE-политикой: Remove friend → друг исчезает из Manage friends и из карточек; F5 не возвращает.
 
 ## 5. Синхронизация
 
@@ -77,9 +78,9 @@
 - [ ] Settings: Shared tablet / Change name / Manage friends / My code / Join a friend / Switch account / Sync now / Reset progress / Logout / Close.
 - [ ] Reset спрашивает по имени карточки («Reset progress for VOVA?»).
 - [ ] После сброса обнулилась только активная карточка, соседние сохранили счёт.
-- [ ] Change name меняет имя активной карточки и уходит в облако.
+- [ ] Change name меняет имя активной карточки, уходит в облако и **переживает F5** (теперь upsert, а не PATCH).
 - [ ] Logout забывает карточку на устройстве, в облаке она остаётся; вход по коду возвращает.
-- [ ] Внизу Settings — `DET Practice Wheel · v1.7`.
+- [ ] Внизу Settings — `DET Practice Wheel · v1.8`.
 
 ## 6.1 Аккаунт и перенос между устройствами
 
@@ -96,7 +97,7 @@
 - [ ] Android Chrome: «Установить приложение» доступно (PNG-иконки 192/512).
 - [ ] iOS: «Поделиться → На экран Домой» → иконка D·E·T, запуск без адресной строки.
 - [ ] Авиарежим → запуск с иконки: интерфейс и прогресс на месте, чип `🟡 local only`.
-- [ ] DevTools → Application → Service Workers: `sw.js` active, кеш `det-wheel-v1.7`.
+- [ ] DevTools → Application → Service Workers: `sw.js` active, кеш `det-wheel-v1.8`.
 - [ ] После деплоя и онлайн-захода подтягивается новая версия (проверить по номеру в Settings).
 
 ## 8. Бэкап

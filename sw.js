@@ -1,5 +1,5 @@
 // DET Practice Wheel — service worker (PWA shell cache)
-const CACHE = 'det-wheel-v1.7';
+const CACHE = 'det-wheel-v1.8';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon-maskable.svg', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
