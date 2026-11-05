@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" fill="#0a0f14"/>
+  <circle cx="256" cy="256" r="118" fill="none" stroke="#00e5ff" stroke-width="12" opacity="0.35"/>
+  <circle cx="256" cy="256" r="88" fill="none" stroke="#00e5ff" stroke-width="5" opacity="0.8"/>
+  <circle cx="256" cy="138" r="14" fill="#58cc02"/>
+  <circle cx="358" cy="297" r="14" fill="#ffc800"/>
+  <circle cx="154" cy="297" r="14" fill="#ff4b4b"/>
+  <text x="256" y="280" text-anchor="middle" font-family="Nunito, Arial, sans-serif" font-size="86" font-weight="900" fill="#ffffff" letter-spacing="4">D·E·T</text>
+</svg>
