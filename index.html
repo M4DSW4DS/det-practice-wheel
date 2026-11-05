@@ -57,6 +57,9 @@
         
         .player-card.active { transform: scale(1.03); opacity: 1; z-index: 10; border-color: var(--pc); box-shadow: 0 0 15px var(--pc-soft); background: radial-gradient(circle at center, var(--pc-soft) 0%, var(--panel) 80%); }
         
+        .del-friend { position: absolute; top: 6px; right: 6px; background: rgba(255,75,75,0.15); border: 1px solid var(--p1-color); color: var(--p1-color); width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 900; cursor: pointer; z-index: 20; transition: 0.2s; }
+        .del-friend:hover { background: var(--p1-color); color: #fff; }
+
         .player-content { display: flex; align-items: center; justify-content: space-between; width: 100%; }
         
         @keyframes pulse-glow { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 5px var(--pc)); } 50% { transform: scale(1.1); filter: drop-shadow(0 0 15px var(--pc)); } }
@@ -104,6 +107,12 @@
         .center-spin-btn:active .btn-text { transform: translateY(4px) scale(0.95); }
         .center-spin-btn.hidden { opacity: 0; transform: translate(-50%, -50%) scale(0.8); pointer-events: none; }
 
+        #watchOverlay {
+            display: none; position: absolute; inset: 0; background: rgba(10, 15, 20, 0.65); backdrop-filter: blur(2px);
+            z-index: 20; border-radius: 24px; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; padding: 20px; cursor: pointer; user-select: none;
+        }
+
         .modal-overlay { position: fixed; inset: 0; background: rgba(10,15,20,0.9); backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 100; opacity: 0; pointer-events: none; transition: 0.3s; }
         .modal-overlay.active { opacity: 1; pointer-events: auto; }
         .modal { background: var(--panel); border: 2px solid var(--sys-cyan); border-radius: 20px; padding: 25px 20px; max-width: 400px; width: 100%; text-align: center; box-shadow: 0 0 50px rgba(0, 229, 255, 0.2); display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative;}
@@ -127,8 +136,6 @@
         .btn-close { background: transparent; color: #78909c; border: 1px solid #2b3d47; }
         .btn-close:active { background: #131f24; color: #fff; border-color: var(--sys-cyan); }
         .btn-danger { background: #ff4b4b; border-bottom: 4px solid #cc0000; color: #fff; }
-        
-
         
         .lucky-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; margin-bottom: 15px; width: 100%; }
         .lucky-btn { background: #0d161a; border: 1px solid #2b3d47; color: #fff; padding: 10px 5px; border-radius: 8px; font-size: 0.8rem; font-weight: 800; cursor: pointer; transition: 0.2s; }
@@ -202,9 +209,6 @@
         .player-ago { font-size: 0.58rem; font-weight: 800; color: #546e7a; white-space: nowrap; }
         .app-ver { font-size: 0.6rem; color: #455a64; font-weight: 800; letter-spacing: 1px; margin-top: 6px; }
         .game-layout.watching .right-panel { display: flex; flex: 1; width: 100%; min-height: 0; }
-        @media (max-width: 1199px) {
-            .game-layout.watching .drum-wrapper, .game-layout.watching .player-switch { display: none; }
-        }
         .host-btn { background: transparent; border: 2px solid var(--border); color: #90a4ae; border-bottom-width: 4px; }
         .host-btn.on { background: var(--sys-cyan); border-color: var(--sys-cyan); color: #001018; }
         .adv-links { display: flex; gap: 12px; justify-content: center; padding-top: 2px; }
@@ -243,6 +247,11 @@
             <div class="drum-track" id="drumTrack"></div>
             <div class="drum-shadow bottom"></div>
             <button class="center-spin-btn" id="spinBtn"><span class="btn-text">ENTER</span></button>
+            <div id="watchOverlay" onclick="stopWatching()">
+                <span class="modal-emoji" style="font-size: 3.5rem; margin-bottom: 0;">👀</span>
+                <div class="modal-task-name" style="font-size: 1.2rem; margin-bottom: 5px; text-shadow: none;">VIEWING FRIEND</div>
+                <div class="modal-desc" style="font-size: 0.85rem; margin-bottom: 0;">Read-only mode<br>Tap to exit</div>
+            </div>
         </div>
 
         <div class="right-panel">
@@ -261,6 +270,7 @@
                 <button class="btn btn-close" onclick="renameMe()">✏️ Change name</button>
                 <button class="btn btn-accept" onclick="syncNow()">🔄 Sync now</button>
                 <button class="btn btn-danger" onclick="openResetConfirm()">Reset progress</button>
+                <button class="btn btn-close" onclick="logoutMe()">🚪 Logout</button>
                 <button class="btn btn-close" onclick="closeSettings()">Close</button>
                 <div class="adv-links">
                     <a onclick="closeSettings(); runAutotest()">Diagnostics</a>
@@ -320,11 +330,17 @@
     <div class="modal-overlay" id="qrOverlay">
         <div class="modal" id="qrModal" style="border-color: var(--sys-cyan);">
             <div class="modal-close-x" onclick="document.getElementById('qrOverlay').classList.remove('active')">×</div>
-            <h2 class="modal-title" style="color: var(--sys-cyan);">INVITE</h2>
-            <p class="modal-desc">Scan the code or type it in — that is how a friend joins <b id="qrPlayerId">…</b>.</p>
-            <img src="" id="qrImage" class="qr-image" alt="QR Code">
-            <p class="qr-code" id="qrCode"></p>
-            <button class="btn btn-accept" onclick="document.getElementById('qrOverlay').classList.remove('active')">Done</button>
+            <h2 class="modal-title" style="color: var(--sys-cyan);">INVITE FRIEND</h2>
+            <p class="modal-desc">Scan this QR code or copy the link below.</p>
+            <img src="" id="qrImage" class="qr-image" alt="QR Code" style="margin-bottom: 5px;">
+            
+            <div class="qr-code" id="qrCode" style="font-size: 1.4rem; font-weight: 900; color: var(--sys-gold); letter-spacing: 3px; margin: 10px 0;"></div>
+            
+            <div class="action-btns" style="margin-top: 10px;">
+                <button class="btn btn-accept" onclick="copyInviteLink()">🔗 Copy Invite Link</button>
+                <button class="btn btn-close" onclick="scanQR()" style="margin-bottom: 5px;">📷 Scan QR (Camera)</button>
+                <button class="btn btn-close" onclick="document.getElementById('qrOverlay').classList.remove('active')">Close</button>
+            </div>
         </div>
     </div>
 
@@ -349,6 +365,24 @@
     </div>
 
     <script>
+        // ==== БЕЗОПАСНОЕ ХРАНИЛИЩЕ (Защита от крашей в песочницах) ====
+        const safeStorage = (() => {
+            try {
+                const test = '__test__';
+                localStorage.setItem(test, test);
+                localStorage.removeItem(test);
+                return localStorage;
+            } catch (e) {
+                console.warn('localStorage заблокирован. Используем память.');
+                const mem = {};
+                return {
+                    getItem: k => mem[k] || null,
+                    setItem: (k, v) => { mem[k] = String(v); },
+                    removeItem: k => { delete mem[k]; }
+                };
+            }
+        })();
+
         let isMuted = false;
 
         const SUPABASE_URL = "https://qjvanbuqrfvbhjjzcwjg.supabase.co";
@@ -418,7 +452,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
         const MAX_XP = 40000;
 
         const AVATARS = ['🦉', '🦊', '🐼', '🐯', '🐸', '🐙'];
-        const APP_VERSION = '1.4';
+        const APP_VERSION = '1.7';
         const PC = [['#ff4b4b', 'rgba(255,75,75,0.18)'], ['#ff9600', 'rgba(255,150,0,0.18)'], ['#ce82ff', 'rgba(206,130,255,0.18)']];
         const isMobile = () => window.innerWidth <= 768;
         const ago = ts => {
@@ -429,8 +463,8 @@ document.addEventListener('touchstart', initAudio, { once: true });
         };
         const getDefaultState = () => ({ p: 1, score: {}, prog: {}, inv: {} });
         let state;
-        try { state = JSON.parse(localStorage.getItem('detGame_v23')) || getDefaultState(); }
-        catch (e) { console.warn('Corrupt localStorage, reset:', e); state = getDefaultState(); }
+        try { state = JSON.parse(safeStorage.getItem('detGame_v23')) || getDefaultState(); }
+        catch (e) { console.warn('Corrupt safeStorage, reset:', e); state = getDefaultState(); }
         state.score = state.score || {}; state.prog = state.prog || {}; state.inv = state.inv || {};
 
         const ensurePlayer = id => {
@@ -446,16 +480,22 @@ document.addEventListener('touchstart', initAudio, { once: true });
         // ==== SUPABASE: одна строка = один игрок, связи через links ====
         const LS_STATE = 'detGame_v23', LS_SAVED = 'detGame_savedAt', LS_SYNCED = 'detGame_syncedAt', LS_MY = 'detGame_myPlayer', LS_HOST = 'detGame_host', LS_MIGR = 'detGame_migrated';
         let cloudReady = false, syncTimer = null, bootTimer = null, syncHideTimer = null, retryDelay = 15000, bannerShown = false, migratePending = false, lastError = '';
-        let savedAt = +(localStorage.getItem(LS_SAVED) || 0), syncedAt = +(localStorage.getItem(LS_SYNCED) || 0);
+        let savedAt = +(safeStorage.getItem(LS_SAVED) || 0), syncedAt = +(safeStorage.getItem(LS_SYNCED) || 0);
         const isDirty = () => savedAt > syncedAt;
 
         const isDesktop = window.matchMedia('(min-width: 1025px)').matches;
-        let myId = +(localStorage.getItem(LS_MY) || 0) || 0;
-        let hostMode = isDesktop || localStorage.getItem(LS_HOST) === '1';
+        let myId = +(safeStorage.getItem(LS_MY) || 0) || 0;
+        let hostMode = isDesktop || safeStorage.getItem(LS_HOST) === '1';
         let viewId = 0, friendIds = [], pendingJoin = '';
         const meta = {};                                   // id -> {name, avatar, token}
         const canWrite = id => hostMode || id === myId;
-        const groupIds = () => [...new Set([myId, ...friendIds].filter(Boolean))].sort((a, b) => a - b);
+        
+        // Своя карточка всегда первая
+        const groupIds = () => {
+            const ids = [...new Set([myId, ...friendIds].filter(Boolean))];
+            const others = ids.filter(id => id !== myId).sort((a, b) => a - b);
+            return myId ? [myId, ...others] : others;
+        };
 
         const realApi = (path, opt = {}) => fetch(`${SUPABASE_URL}/rest/v1/${path}`, Object.assign({}, opt, {
             headers: Object.assign({ 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' }, opt.headers || {})
@@ -502,7 +542,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
                 if (!r.ok) throw new Error('HTTP ' + r.status + ' · ' + (await r.text()).slice(0, 140));
                 const row = (await r.json())[0] || {};
                 syncedAt = Math.max(syncedAt, stamp);
-                localStorage.setItem(LS_SYNCED, syncedAt);
+                safeStorage.setItem(LS_SYNCED, syncedAt);
                 setSyncStatus('synced', nameOf(p) + ' saved · ' + (row.updated_at || ''));
                 return true;
             } catch (e) {
@@ -515,8 +555,8 @@ document.addEventListener('touchstart', initAudio, { once: true });
         const save = () => {
             if (window.__testMode) return;
             savedAt = Date.now();
-            localStorage.setItem(LS_SAVED, savedAt);
-            try { localStorage.setItem(LS_STATE, JSON.stringify(state)); } catch (e) {}
+            safeStorage.setItem(LS_SAVED, savedAt);
+            try { safeStorage.setItem(LS_STATE, JSON.stringify(state)); } catch (e) {}
             setSyncStatus(cloudReady ? 'saving' : 'local');
             clearTimeout(syncTimer);
             syncTimer = setTimeout(() => pushPlayer(state.p), 400);
@@ -576,12 +616,12 @@ document.addEventListener('touchstart', initAudio, { once: true });
 
         // первичная настройка: планшет с историей остаётся хостом, новое устройство спросит «Кто ты?»
         function initIdentity() {
-            if (myId || localStorage.getItem(LS_MIGR)) return;
+            if (myId || safeStorage.getItem(LS_MIGR)) return;
             const hasLocal = Object.keys(state.score).some(id => (state.score[id] | 0) > 0 || (state.inv[id] || []).length || Object.values(state.prog[id] || {}).some(v => v > 0));
             if (!hasLocal) return;
             hostMode = true; myId = 1;
-            localStorage.setItem(LS_HOST, '1'); localStorage.setItem(LS_MY, 1); localStorage.setItem(LS_MIGR, '1');
-            migratePending = true; savedAt = Date.now(); localStorage.setItem(LS_SAVED, savedAt);
+            safeStorage.setItem(LS_HOST, '1'); safeStorage.setItem(LS_MY, 1); safeStorage.setItem(LS_MIGR, '1');
+            migratePending = true; savedAt = Date.now(); safeStorage.setItem(LS_SAVED, savedAt);
         }
 
         function showOverlay(title, text, opts = {}) {
@@ -645,7 +685,9 @@ document.addEventListener('touchstart', initAudio, { once: true });
             $('playerSwitch').innerHTML = ids.map((id, i) => {
                 const active = shownId() === id, [c, soft] = PC[i % 3];
                 const inv = (state.inv[id] || []).map((x, k) => `<div class="inv-icon" onclick="useCard(event, ${id}, ${k})">${x.e}${x.val ? `<div class="inv-badge">+${x.val}</div>` : ''}</div>`).join('');
+                const delBtn = id !== myId ? `<div class="del-friend" onclick="removeFriend(event, ${id})" title="Remove friend">×</div>` : '';
                 return `<div class="player-card${active ? ' active' : ''}" style="--pc:${c};--pc-soft:${soft}" onclick="selectPlayer(${id})">
+                    ${delBtn}
                     <div class="player-content">
                         <span class="p-avatar" onclick="showQR(event, ${id})" title="Invite">${esc(avatarOf(id))}</span>
                         <span class="score-display">${state.score[id] | 0}</span>
@@ -670,6 +712,8 @@ document.addEventListener('touchstart', initAudio, { once: true });
             const on = !!viewId;
             document.querySelector('.game-layout').classList.toggle('watching', on);
             $('dashboardPanel').classList.toggle('watching', on);
+            const overlay = $('watchOverlay');
+            if (overlay) overlay.style.display = on ? 'flex' : 'none';
         }
 
         window.stopWatching = () => { viewId = 0; updateUI(); if (isMobile()) switchView('wheel'); };
@@ -734,67 +778,6 @@ document.addEventListener('touchstart', initAudio, { once: true });
             return pass;
         }
 
-        // ==== SELF-TEST (?selftest=1): прогон UI на фейковом API, база не трогается ====
-        const fakeDb = new Map();
-        const reply = data => ({ ok: true, status: 200, json: async () => data, text: async () => JSON.stringify(data) });
-        function fakeApi(path, opt = {}) {
-            const [table, qs = ''] = path.split('?');
-            const method = opt.method || 'GET';
-            if (table === 'links') return Promise.resolve(reply([{ friend_id: 2 }, { friend_id: 3 }, { friend_id: 4 }]));
-            if (method === 'POST') {
-                const body = JSON.parse(opt.body || '[]');
-                body.forEach(r => fakeDb.set(r.player_id, Object.assign({ progress: {}, inventory: [], stolen_bag: 0, name: '', avatar: '🦉', token: 't' + r.player_id, score: 0 }, fakeDb.get(r.player_id) || {}, r)));
-                return Promise.resolve(reply(body));
-            }
-            const rows = [...fakeDb.values()];
-            const eq = qs.match(/player_id=eq\.(\d+)/);
-            if (eq) return Promise.resolve(reply(rows.filter(r => r.player_id === +eq[1])));
-            const inc = qs.match(/player_id=in\.\(([\d,]+)\)/);
-            if (inc) { const set = inc[1].split(',').map(Number); return Promise.resolve(reply(rows.filter(r => set.includes(r.player_id)))); }
-            return Promise.resolve(reply(rows));
-        }
-
-        window.runSelfTest = async () => {
-            const snap = JSON.stringify(state), apiSnap = api, mySnap = myId, hostSnap = hostMode, viewSnap = viewId, cloudSnap = cloudReady;
-            const metaSnap = JSON.stringify(meta), friendSnap = friendIds.slice(), rnd = Math.random;
-            const results = [];
-            const check = (name, cond, extra) => results.push((cond ? '✅ ' : '❌ ') + name + (extra ? ' — ' + extra : ''));
-            window.__testMode = true; api = fakeApi; Math.random = () => 0.99;
-            [1, 2, 3, 4].forEach(id => fakeDb.set(id, { player_id: id, name: 'P' + id, avatar: '🦊', token: 'tok' + id, score: 0, stolen_bag: 0, progress: {}, inventory: [] }));
-            myId = 1; hostMode = true; viewId = 0;
-            try {
-                await bootSync(false);
-                check('4 cards rendered', document.querySelectorAll('.player-card').length === 4, document.querySelectorAll('.player-card').length);
-                const idx = allSectors.findIndex(s => s.id === 'read_select');
-                state.prog[1] = {}; skills.forEach(s => state.prog[1][s.id] = 0); state.score[1] = 0;
-                for (let i = 0; i < 6; i++) { winIdx = idx; showResult(allSectors[idx]); btnAccept.click(); btnFinish.click(); closeModal(); }
-                check('progress stops at 6/6', state.prog[1].read_select === 6, 'progress=' + state.prog[1].read_select);
-                check('XP 6×200 + 1000 mastery', state.score[1] === 2200, 'score=' + state.score[1]);
-                selectPlayer(2);
-                check('host can switch card', state.p === 2);
-                hostMode = false; selectPlayer(3);
-                check('someone else\'s card opens read-only', viewId === 3 && document.querySelector('.game-layout').classList.contains('watching'), 'viewId=' + viewId);
-                check('progress panel visible while watching', getComputedStyle(document.querySelector('.right-panel')).display !== 'none');
-                stopWatching();
-                check('watch exit restores wheel', viewId === 0 && !document.querySelector('.game-layout').classList.contains('watching'));
-                state.p = 2; state.score[2] = 500; state.score[3] = 777;
-                openResetConfirm(); await confirmResetProgress();
-                check('reset touches only active card', state.score[2] === 0 && state.score[3] === 777, 'p2=' + state.score[2] + ' p3=' + state.score[3]);
-                check('modal closed after reset', !$('resetConfirmOverlay').classList.contains('active'));
-            } catch (e) { results.push('❌ crash: ' + e.message + '\n' + (e.stack || '').split('\n')[1]); }
-            state = JSON.parse(snap); api = apiSnap; myId = mySnap; hostMode = hostSnap; viewId = viewSnap; cloudReady = cloudSnap;
-            Object.keys(meta).forEach(k => delete meta[k]); Object.assign(meta, JSON.parse(metaSnap)); friendIds = friendSnap;
-            Math.random = rnd; window.__testMode = false;
-            updateUI();
-
-            const pass = results.every(r => r.startsWith('✅'));
-            const text = '=== SELF-TEST ' + (pass ? 'PASS' : 'FAIL') + ' ===\n' + results.join('\n');
-            console.log(text);
-            showOverlay((pass ? '✅ SELF-TEST PASS' : '❌ SELF-TEST FAIL'), text, { ok: pass });
-            return pass;
-        };
-
-
         function showEventModal(emoji, title, desc, borderColor, btnText, onCloseAction) {
             $('eventEmoji').textContent = emoji;
             $('eventTitle').textContent = title;
@@ -826,11 +809,10 @@ document.addEventListener('touchstart', initAudio, { once: true });
 
         window.switchView = function(view, dir = 1) {
             const layout = document.querySelector('.game-layout');
-            if (viewId && view !== 'progress') { viewId = 0; syncWatchState(); updateUI(); }
             layout.classList.remove('view-players', 'view-wheel', 'view-progress');
             layout.classList.add('view-' + view);
             document.querySelectorAll('.det-letter').forEach(l => l.classList.toggle('active', l.dataset.view === view));
-            localStorage.setItem('detGame_mobileView', view);
+            safeStorage.setItem('detGame_mobileView', view);
             if (view === 'wheel') setTimeout(() => setPos(curIdx), 50);
             if (view === 'players' && cloudReady) loadFriends().then(() => loadGroup(false)).then(updateUI).catch(() => {});
             if (isMobile()) {
@@ -855,7 +837,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
         window.forcePull = async () => {
             playClick();
             if (!confirm('Pull: load data from the cloud?\n\nLocal progress will be replaced with what is in Supabase.')) return;
-            savedAt = 0; localStorage.removeItem(LS_SAVED);
+            savedAt = 0; safeStorage.removeItem(LS_SAVED);
             cloudReady = false;
             const ok = await bootSync(true);
             alert(ok ? 'Done. Data loaded from Supabase.' : 'Could not reach Supabase.\n\n' + lastError);
@@ -902,8 +884,8 @@ document.addEventListener('touchstart', initAudio, { once: true });
                     state.score = state.score || {}; state.prog = state.prog || {}; state.inv = state.inv || {};
                     groupIds().forEach(ensurePlayer);
                     if (myId) ensurePlayer(myId);
-                    savedAt = Date.now(); localStorage.setItem(LS_SAVED, savedAt);
-                    localStorage.setItem(LS_STATE, JSON.stringify(state));
+                    savedAt = Date.now(); safeStorage.setItem(LS_SAVED, savedAt);
+                    safeStorage.setItem(LS_STATE, JSON.stringify(state));
                     updateUI();
                     alert('Imported. Press "Sync now" to push it to the cloud.');
                 } catch (e) { alert('Import failed: ' + e.message); }
@@ -946,14 +928,98 @@ document.addEventListener('touchstart', initAudio, { once: true });
 
         window.badgeTap = () => { if (viewId) return stopWatching(); switchView('players'); };
 
+        let currentInviteToken = '';
         window.showQR = (e, pId) => {
             e.stopPropagation(); playClick();
-            const token = (meta[pId] && meta[pId].token) || '';
-            const url = token ? `https://m4dsw4ds.github.io/det-practice-wheel/?join=${token}` : `https://m4dsw4ds.github.io/det-practice-wheel/?player=${pId}`;
+            currentInviteToken = (meta[pId] && meta[pId].token) || '';
+            if (!currentInviteToken) {
+                $('qrPlayerId').textContent = nameOf(pId);
+                $('qrCode').textContent = 'SYNC FIRST...';
+                $('qrImage').src = '';
+                $('qrOverlay').classList.add('active');
+                return;
+            }
+            const url = `https://m4dsw4ds.github.io/det-practice-wheel/?join=${currentInviteToken}`;
             $('qrPlayerId').textContent = nameOf(pId);
             $('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}&color=131f24&bgcolor=ffffff`;
-            $('qrCode').textContent = token ? 'Code: ' + token : 'Code appears after the first sync';
+            $('qrCode').textContent = currentInviteToken;
             $('qrOverlay').classList.add('active');
+        };
+
+        window.copyInviteLink = () => {
+            if (!currentInviteToken) return alert('Wait for sync first.');
+            const url = `https://m4dsw4ds.github.io/det-practice-wheel/?join=${currentInviteToken}`;
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(url).then(() => alert('Link copied! Send it to your friend.')).catch(() => prompt('Copy this link:', url));
+            } else {
+                prompt('Copy this link:', url);
+            }
+        };
+
+        window.scanQR = async () => {
+            if (!('BarcodeDetector' in window)) {
+                return alert("Your browser doesn't support inline scanning.\n\nPlease use your phone's Camera app to scan the QR code.");
+            }
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                const video = document.createElement('video');
+                video.srcObject = stream;
+                video.play();
+                const detector = new BarcodeDetector({ formats: ['qr_code'] });
+                const scanLoop = async () => {
+                    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                        const barcodes = await detector.detect(video);
+                        if (barcodes.length > 0) {
+                            stream.getTracks().forEach(t => t.stop());
+                            video.remove();
+                            const raw = barcodes[0].rawValue;
+                            const token = tokenFrom(raw);
+                            if (token) {
+                                $('identityOverlay').classList.add('active');
+                                $('identCode').value = token;
+                                joinByCode();
+                            }
+                            return;
+                        }
+                    }
+                    requestAnimationFrame(scanLoop);
+                };
+                alert('Point your camera at the QR code. (Scanner is active for 10s)');
+                video.style.display = 'none'; document.body.appendChild(video);
+                setTimeout(() => { stream.getTracks().forEach(t => t.stop()); video.remove(); }, 10000);
+                requestAnimationFrame(scanLoop);
+            } catch (err) {
+                alert('Camera access denied or unavailable.');
+            }
+        };
+
+        window.removeFriend = async (e, friendId) => {
+            e.stopPropagation();
+            if (!confirm('Remove this friend?\n\nThey will disappear from your list, and you from theirs.')) return;
+            if (!cloudReady) return alert('No connection to Supabase.');
+            try {
+                const filter = `or=(and(owner_id.eq.${myId},friend_id.eq.${friendId}),and(owner_id.eq.${friendId},friend_id.eq.${myId}))`;
+                const r = await api(`links?${filter}`, { method: 'DELETE' });
+                if (!r.ok) throw new Error(await r.text());
+                
+                friendIds = friendIds.filter(id => id !== friendId);
+                if (viewId === friendId) viewId = 0;
+                delete meta[friendId];
+                updateUI();
+                alert('Friend removed.');
+            } catch (err) {
+                alert('Failed to remove friend: ' + err.message);
+            }
+        };
+
+        window.logoutMe = () => {
+            if (!confirm('Logout from this device?\n\nYour card stays in the cloud, but this device will forget it. You can log back in using your code.')) return;
+            safeStorage.removeItem('detGame_myPlayer');
+            safeStorage.removeItem('detGame_host');
+            safeStorage.removeItem('detGame_migrated');
+            safeStorage.removeItem('detGame_savedAt');
+            safeStorage.removeItem('detGame_syncedAt');
+            location.reload();
         };
 
         window.useCard = (e, pId, idx) => {
@@ -994,8 +1060,8 @@ document.addEventListener('touchstart', initAudio, { once: true });
 
         async function bindMe(row) {
             myId = row.player_id;
-            localStorage.setItem(LS_MY, myId);
-            localStorage.setItem(LS_MIGR, '1');
+            safeStorage.setItem(LS_MY, myId);
+            safeStorage.setItem(LS_MIGR, '1');
             applyRow(row);
             if (!canWrite(state.p)) state.p = myId;
             $('identityOverlay').classList.remove('active');
@@ -1083,7 +1149,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
         window.toggleHost = () => {
             if (isDesktop) return;
             hostMode = !hostMode;
-            localStorage.setItem(LS_HOST, hostMode ? '1' : '0');
+            safeStorage.setItem(LS_HOST, hostMode ? '1' : '0');
             if (!hostMode) { viewId = 0; if (myId) state.p = myId; }
             $('hostBtn').classList.toggle('on', hostMode);
             updateUI();
@@ -1154,7 +1220,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
 
         function executeSpin() {
             if (isSpinning) return;
-            if (viewId) { viewId = 0; updateUI(); if (isMobile()) switchView('wheel'); }
+            if (viewId) return; // Запрещаем крутить чужое колесо
             ensurePlayer(state.p);
             initAudio(); playStart(); buzz(30);
             if (curIdx >= (REPEATS - 2) * allSectors.length) {
@@ -1294,7 +1360,7 @@ window.addEventListener('keydown', (e) => {
             const params = new URLSearchParams(location.search);
             initIdentity();
             const urlPlayer = parseInt(params.get('player'));
-            if (urlPlayer && !myId && await claimPlayer(urlPlayer)) { myId = urlPlayer; localStorage.setItem(LS_MY, myId); localStorage.setItem(LS_MIGR, '1'); }
+            if (urlPlayer && !myId && await claimPlayer(urlPlayer)) { myId = urlPlayer; safeStorage.setItem(LS_MY, myId); safeStorage.setItem(LS_MIGR, '1'); }
             pendingJoin = params.get('join') || '';
             if (myId) state.p = myId;
             ensurePlayer(state.p);
@@ -1302,13 +1368,19 @@ window.addEventListener('keydown', (e) => {
             updateUI();
             setTimeout(() => { curIdx = Math.floor(REPEATS / 2) * allSectors.length; setPos(curIdx); }, 50);
             window.addEventListener('resize', () => setPos(curIdx));
-            if (isMobile()) switchView(localStorage.getItem('detGame_mobileView') || 'wheel');
+            if (isMobile()) switchView(safeStorage.getItem('detGame_mobileView') || 'wheel');
             document.querySelectorAll('.det-letter').forEach(el => {
                 el.addEventListener('click', () => switchView(el.dataset.view));
             });
             syncInd.onclick = () => runAutotest();
             if (params.get('autotest') === '1') { runAutotest(); return; }
-            if (params.get('selftest') === '1') { runSelfTest(); return; }
+            if (params.get('selftest') === '1') {
+                const script = document.createElement('script');
+                script.src = 'selftest.js';
+                script.onload = () => { if (window.runSelfTest) window.runSelfTest(); };
+                document.body.appendChild(script);
+                return;
+            }
             if (!myId) openIdentity();
             else setTimeout(async () => { await bootSync(true); if (pendingJoin) finishJoin(); }, 300);
             if (isMobile()) {
@@ -1322,7 +1394,7 @@ window.addEventListener('keydown', (e) => {
                     const dx = e.changedTouches[0].clientX - tsX;
                     const dy = e.changedTouches[0].clientY - tsY;
                     if (Math.abs(dx) > 50 && Math.abs(dy) < 40) {
-                        const views = viewId ? ['players', 'progress'] : ['players', 'wheel', 'progress'];
+                        const views = ['players', 'wheel', 'progress'];
                         const cur = views.find(v => layout.classList.contains('view-' + v)) || views[0];
                         const idx = Math.max(0, views.indexOf(cur));
                         const nextIdx = dx < 0 ? (idx + 1) % views.length : (idx + views.length - 1) % views.length;
@@ -1333,8 +1405,14 @@ window.addEventListener('keydown', (e) => {
             }
         });
 
-        // PWA: офлайн-оболочка. Служба регистрируется только по https (GitHub Pages).
-        if ('serviceWorker' in navigator && (location.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(location.hostname))) {
+        // ==== DEV MODE: Отключение кэша PWA при ?dev=1 ====
+        if (location.search.includes('dev=1') && 'serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(regs => {
+                regs.forEach(reg => reg.unregister());
+                caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
+                console.log('🛠 DEV MODE: Service Worker отключен, кэш очищен');
+            });
+        } else if ('serviceWorker' in navigator && (location.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(location.hostname))) {
             navigator.serviceWorker.register('./sw.js').catch(e => console.warn('SW registration failed:', e.message));
         }
     </script>
