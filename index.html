@@ -115,6 +115,7 @@
         .modal-close-x:hover { color: #fff; }
         .modal-emoji { font-size: 4.5rem; margin-bottom: 5px; display: block; filter: drop-shadow(0 0 15px rgba(255,255,255,0.3)); }
         .modal-task-name { font-family: 'Nunito', sans-serif; font-size: 1.8rem; font-weight: 900; color: #fff; text-shadow: 0 0 15px var(--sys-cyan); text-transform: uppercase; margin-bottom: 10px; line-height: 1.1; }
+        .modal-title { font-family: 'Nunito', sans-serif; font-size: 1.5rem; font-weight: 900; color: #fff; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; line-height: 1.15; }
         .modal-desc { font-size: 1rem; color: #b0bec5; margin-bottom: 20px; line-height: 1.5; font-weight: 700; }
         .xp-badge { display: inline-block; background: rgba(255,200,0,0.1); color: var(--sys-gold); padding: 6px 12px; border-radius: 8px; font-family: 'Share Tech Mono', monospace; font-weight: 900; margin-top: 10px; border: 1px solid var(--sys-gold); }
         .action-btns { display: flex; flex-direction: column; gap: 10px; width: 100%; }
@@ -162,7 +163,7 @@
         .mobile-player-badge { display: none; }
         @media (max-width: 768px) {
             body { padding: 5px; height: 100dvh; }
-            h1 { font-size: 1.2rem; text-align: center; padding: 0; margin: 0 0 4px 0; letter-spacing: 2px; text-shadow: 0 0 10px rgba(0, 229, 255, 0.5); }
+            h1 { font-size: 1.2rem; text-align: center; padding: 0 84px; margin: 0 0 4px 0; letter-spacing: 2px; text-shadow: 0 0 10px rgba(0, 229, 255, 0.5); }
             .det-letter { display: inline-block; transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1); opacity: 0.4; cursor: pointer; }
             .det-letter.active { opacity: 1; text-shadow: 0 0 20px var(--sys-cyan), 0 0 40px rgba(0, 229, 255, 0.6); transform: scale(1.5); }
             .det-sep { opacity: 0.4; }
@@ -201,8 +202,10 @@
         .modal.in-progress-mode { animation: pulse-border 1.5s infinite; }
 
         .player-name { font-size: 0.68rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; color: #b0bec5; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .watch-banner { position: fixed; top: 8px; left: 50%; transform: translateX(-50%); z-index: 60; background: rgba(255,200,0,0.14); border: 1px solid var(--sys-gold); color: var(--sys-gold); font-weight: 800; font-size: 0.7rem; padding: 6px 12px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
-        @media (min-width: 769px) { .watch-banner { top: 62px; } }
+        .watch-banner { display: none; position: fixed; top: 62px; left: 50%; transform: translateX(-50%); z-index: 60; background: rgba(255,200,0,0.14); border: 1px solid var(--sys-gold); color: var(--sys-gold); font-weight: 800; font-size: 0.7rem; padding: 6px 12px; border-radius: 999px; cursor: pointer; white-space: nowrap; max-width: 96vw; overflow: hidden; text-overflow: ellipsis; }
+        @media (max-width: 768px) {
+            .watch-banner { position: static; transform: none; margin: 0 auto 4px; width: fit-content; max-width: 92vw; }
+        }
         .host-toggle { display: flex; gap: 8px; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 800; color: #b0bec5; text-transform: none; letter-spacing: 0; padding: 4px 0; }
         .host-toggle input { width: 18px; height: 18px; accent-color: var(--sys-cyan); }
         .ident-input { width: 100%; padding: 12px; border-radius: 12px; border: 2px solid var(--border); background: #0d161a; color: #fff; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 1rem; margin-bottom: 10px; text-align: center; }
@@ -233,7 +236,7 @@
             <span id="badgeScore">0</span>
         </button>
         <div class="watch-banner" id="watchBanner" style="display:none" onclick="stopWatching()">
-            👁 <span id="watchName">…</span> · только чтение · закрыть
+            👁 <span id="watchName">…</span> · read only · tap to exit
         </div>
         <div class="player-switch" id="playerSwitch"></div>
 
@@ -254,15 +257,15 @@
     <div class="modal-overlay" id="settingsOverlay">
         <div class="modal settings-modal pop-spring" id="settingsModal">
             <div class="modal-close-x" onclick="closeSettings()">×</div>
-            <h2 class="settings-title">Настройки</h2>
+            <h2 class="settings-title">Settings</h2>
             <div class="action-btns">
-                <button class="btn btn-close" onclick="renameMe()">✏️ Сменить имя</button>
-                <label class="host-toggle"><input type="checkbox" id="hostToggle" onchange="toggleHost(this.checked)"> Общий планшет — играть за всех</label>
-                <button class="btn btn-accept" onclick="forcePull()">🔄 Pull: облако → устройство</button>
-                <button class="btn btn-accept" onclick="forcePush()" style="background: #ff9600; border-bottom-color: #cc6600;">☁️ Push: устройство → облако</button>
-                <button class="btn btn-close" onclick="closeSettings(); runAutotest()">🩺 Проверить синхронизацию</button>
-                <button class="btn btn-danger" onclick="openResetConfirm()">Сбросить прогресс</button>
-                <button class="btn btn-close" onclick="closeSettings()">Закрыть</button>
+                <button class="btn btn-close" onclick="renameMe()">✏️ Change name</button>
+                <label class="host-toggle"><input type="checkbox" id="hostToggle" onchange="toggleHost(this.checked)"> Shared tablet — play as anyone</label>
+                <button class="btn btn-accept" onclick="forcePull()">🔄 Pull: cloud → device</button>
+                <button class="btn btn-accept" onclick="forcePush()" style="background: #ff9600; border-bottom-color: #cc6600;">☁️ Push: device → cloud</button>
+                <button class="btn btn-close" onclick="closeSettings(); runAutotest()">🩺 Sync check</button>
+                <button class="btn btn-danger" onclick="openResetConfirm()">Reset progress</button>
+                <button class="btn btn-close" onclick="closeSettings()">Close</button>
             </div>
         </div>
     </div>
@@ -270,11 +273,11 @@
     <div class="modal-overlay" id="resetConfirmOverlay">
         <div class="modal danger">
             <span class="modal-emoji">⚠️</span>
-            <h2 class="modal-title" style="color: #ff4b4b;">ВНИМАНИЕ</h2>
-            <p class="modal-desc">Обнулить прогресс всех карточек, доступных этому устройству? Действие необратимо.</p>
+            <h2 class="modal-title" style="color: #ff4b4b;">WARNING</h2>
+            <p class="modal-desc">Reset progress for every card on this device? This cannot be undone.</p>
             <div class="action-btns">
-                <button class="btn btn-danger" onclick="confirmResetProgress()">Да, сбросить</button>
-                <button class="btn btn-close" onclick="document.getElementById('resetConfirmOverlay').classList.remove('active')">Отмена</button>
+                <button class="btn btn-danger" onclick="confirmResetProgress()">Yes, reset</button>
+                <button class="btn btn-close" onclick="document.getElementById('resetConfirmOverlay').classList.remove('active')">Cancel</button>
             </div>
         </div>
     </div>
@@ -298,26 +301,26 @@
     <div class="modal-overlay" id="identityOverlay">
         <div class="modal" id="identityModal" style="border-color: var(--sys-cyan);">
             <span class="modal-emoji">👋</span>
-            <h2 class="modal-task-name">КТО ТЫ?</h2>
-            <p class="modal-desc" id="identityHint">Создай свою карточку — она появится у тех, с кем ты соединишься ссылкой.</p>
-            <input id="identName" class="ident-input" maxlength="14" placeholder="Твоё имя" autocomplete="off">
+            <h2 class="modal-task-name">WHO ARE YOU?</h2>
+            <p class="modal-desc" id="identityHint">Create your card — it shows up for everyone you connect with.</p>
+            <input id="identName" class="ident-input" maxlength="14" placeholder="Your name" autocomplete="off">
             <div class="avatar-pick" id="avatarPick"></div>
-            <button class="btn btn-accept" onclick="createMe()">Создать мою карточку</button>
-            <div class="ident-sep">уже есть карточка?</div>
-            <input id="identCode" class="ident-input" placeholder="Код или ссылка" autocomplete="off">
-            <button class="btn btn-close" onclick="loginByCode()">Войти по коду</button>
-            <button class="btn btn-close" style="margin-top:8px" onclick="document.getElementById('identityOverlay').classList.remove('active')">Позже</button>
+            <button class="btn btn-accept" onclick="createMe()">Create my card</button>
+            <div class="ident-sep">already have a card?</div>
+            <input id="identCode" class="ident-input" placeholder="Code or link" autocomplete="off">
+            <button class="btn btn-close" onclick="loginByCode()">Sign in with code</button>
+            <button class="btn btn-close" style="margin-top:8px" onclick="document.getElementById('identityOverlay').classList.remove('active')">Later</button>
         </div>
     </div>
 
     <div class="modal-overlay" id="qrOverlay">
         <div class="modal" id="qrModal" style="border-color: var(--sys-cyan);">
             <div class="modal-close-x" onclick="document.getElementById('qrOverlay').classList.remove('active')">×</div>
-            <h2 class="modal-title" style="color: var(--sys-cyan);">ПРИГЛАШЕНИЕ</h2>
-            <p class="modal-desc">Дай отсканировать код или продиктуй его — так друг подключится к <b id="qrPlayerId">…</b>.</p>
+            <h2 class="modal-title" style="color: var(--sys-cyan);">INVITE</h2>
+            <p class="modal-desc">Scan the code or type it in — that is how a friend joins <b id="qrPlayerId">…</b>.</p>
             <img src="" id="qrImage" class="qr-image" alt="QR Code">
             <p class="qr-code" id="qrCode"></p>
-            <button class="btn btn-accept" onclick="document.getElementById('qrOverlay').classList.remove('active')">Готово</button>
+            <button class="btn btn-accept" onclick="document.getElementById('qrOverlay').classList.remove('active')">Done</button>
         </div>
     </div>
 
@@ -429,7 +432,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
 
         // ==== SUPABASE: одна строка = один игрок, связи через links ====
         const LS_STATE = 'detGame_v23', LS_SAVED = 'detGame_savedAt', LS_SYNCED = 'detGame_syncedAt', LS_MY = 'detGame_myPlayer', LS_HOST = 'detGame_host', LS_MIGR = 'detGame_migrated';
-        let cloudReady = false, syncTimer = null, bootTimer = null, bannerShown = false, migratePending = false, lastError = '';
+        let cloudReady = false, syncTimer = null, bootTimer = null, syncHideTimer = null, bannerShown = false, migratePending = false, lastError = '';
         let savedAt = +(localStorage.getItem(LS_SAVED) || 0), syncedAt = +(localStorage.getItem(LS_SYNCED) || 0);
         const isDirty = () => savedAt > syncedAt;
 
@@ -446,12 +449,18 @@ document.addEventListener('touchstart', initAudio, { once: true });
 
         function setSyncStatus(mode, detail) {
             syncInd.dataset.mode = mode;
-            syncInd.textContent = { saving: '⏳ сохранение…', synced: '🔵 в облаке', local: '🟡 только локально', error: '🔴 ошибка' }[mode] || mode;
+            syncInd.textContent = { saving: '⏳ saving…', synced: '🔵 synced', local: '🟡 local only', error: '🔴 error' }[mode] || mode;
             syncInd.title = detail || syncInd.textContent;
+            clearTimeout(syncHideTimer);
+            if (mode === 'saving') { syncInd.style.display = 'none'; return; }
+            syncInd.style.display = 'block';
+            if (mode === 'synced') syncHideTimer = setTimeout(() => { syncInd.style.display = 'none'; }, 2200);
         }
 
+        const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+
         const rowOf = p => ({ player_id: p, score: state.score[p] | 0, stolen_bag: (state.stolenBag && state.stolenBag[p]) | 0, progress: state.prog[p] || {}, inventory: state.inv[p] || [] });
-        const nameOf = id => (meta[id] && meta[id].name) || ('Игрок ' + id);
+        const nameOf = id => (meta[id] && meta[id].name) || ('Player ' + id);
         const avatarOf = id => (meta[id] && meta[id].avatar) || '🦉';
 
         function applyRow(r) {
@@ -466,8 +475,8 @@ document.addEventListener('touchstart', initAudio, { once: true });
         }
 
         async function pushPlayer(p = state.p, quiet = false) {
-            if (!cloudReady) { setSyncStatus('local', 'Облако недоступно — прогресс сохранён на устройстве'); return false; }
-            if (!canWrite(p)) { setSyncStatus('local', 'Чужая карточка — только просмотр'); return false; }
+            if (!cloudReady) { setSyncStatus('local', 'Cloud unreachable — saved on this device'); return false; }
+            if (!canWrite(p)) { setSyncStatus('local', "Someone else's card — read only"); return false; }
             const stamp = Date.now();
             if (!quiet) setSyncStatus('saving');
             try {
@@ -480,11 +489,11 @@ document.addEventListener('touchstart', initAudio, { once: true });
                 const row = (await r.json())[0] || {};
                 syncedAt = Math.max(syncedAt, stamp);
                 localStorage.setItem(LS_SYNCED, syncedAt);
-                setSyncStatus('synced', nameOf(p) + ' сохранён · ' + (row.updated_at || ''));
+                setSyncStatus('synced', nameOf(p) + ' saved · ' + (row.updated_at || ''));
                 return true;
             } catch (e) {
                 lastError = String(e.message || e);
-                setSyncStatus('error', 'Запись не удалась: ' + lastError);
+                setSyncStatus('error', 'Write failed: ' + lastError);
                 return false;
             }
         }
@@ -519,8 +528,8 @@ document.addEventListener('touchstart', initAudio, { once: true });
         }
 
         async function bootSync(allowBanner = false) {
-            if (!myId) { setSyncStatus('local', 'Карточка не создана — прогресс на устройстве'); return false; }
-            setSyncStatus('saving', 'Читаю облако…');
+            if (!myId) { setSyncStatus('local', 'No card yet — progress stays on this device'); return false; }
+            setSyncStatus('saving', 'Reading cloud…');
             try {
                 const pending = migratePending;
                 const wasDirty = isDirty() || pending;
@@ -531,16 +540,16 @@ document.addEventListener('touchstart', initAudio, { once: true });
                 if (pending) {
                     for (const id of groupIds()) if (!(await pushPlayer(id, true))) throw new Error(lastError);
                     migratePending = false;
-                    setSyncStatus('synced', 'Локальный прогресс перенесён в Supabase');
+                    setSyncStatus('synced', 'Local progress pushed to Supabase');
                 } else if (wasDirty) { if (!(await pushPlayer(state.p))) throw new Error(lastError); }
-                else setSyncStatus('synced', 'Игроков в группе: ' + rows.length);
+                else setSyncStatus('synced', 'Players in group: ' + rows.length);
                 bannerShown = false;
                 return true;
             } catch (e) {
                 lastError = String(e.message || e);
-                if (cloudReady) { setSyncStatus('error', 'Запись в облако отклонена: ' + lastError); return false; }
+                if (cloudReady) { setSyncStatus('error', 'Cloud rejected the write: ' + lastError); return false; }
                 cloudReady = false;
-                setSyncStatus('local', 'Нет связи с Supabase: ' + lastError + '. Прогресс на этом устройстве, повтор каждые 15 с.');
+                setSyncStatus('local', 'No connection to Supabase: ' + lastError + '. Progress stays on this device, retrying every 15 s.');
                 if (allowBanner && !bannerShown) { bannerShown = true; showSyncBanner(); }
                 clearTimeout(bootTimer);
                 bootTimer = setTimeout(() => { if (!cloudReady) bootSync(false); }, 15000);
@@ -564,11 +573,11 @@ document.addEventListener('touchstart', initAudio, { once: true });
             overlay.innerHTML = `
                 <div style="background:var(--panel);border:2px solid #ffc800;border-radius:20px;padding:25px;max-width:400px;text-align:center;box-shadow:0 0 50px rgba(255,200,0,0.25);">
                     <span style="font-size:3.4rem;display:block;margin-bottom:10px;">🟡</span>
-                    <h2 style="color:#ffc800;margin-bottom:12px;font-family:Nunito;text-transform:uppercase;">Только локально</h2>
-                    <p style="color:#b0bec5;margin-bottom:8px;font-family:Nunito;font-weight:700;line-height:1.5;">Облако недоступно — прогресс пишется на это устройство.</p>
-                    <p style="color:#78909c;margin-bottom:18px;font-family:monospace;font-size:0.7rem;word-break:break-all;">${String(lastError).replace(/</g, '&lt;')}</p>
-                    <button onclick="this.parentElement.parentElement.remove();bootSync(true)" style="width:100%;padding:14px;background:#ffc800;color:#000;border:none;border-radius:12px;cursor:pointer;font-weight:900;font-family:Nunito;text-transform:uppercase;letter-spacing:1px;">Повторить</button>
-                    <button onclick="this.parentElement.parentElement.remove()" style="margin-top:8px;width:100%;padding:12px;background:transparent;color:#78909c;border:1px solid #2b3d47;border-radius:12px;cursor:pointer;font-weight:800;font-family:Nunito;">Продолжить</button>
+                    <h2 style="color:#ffc800;margin-bottom:12px;font-family:Nunito;text-transform:uppercase;">Local only</h2>
+                    <p style="color:#b0bec5;margin-bottom:8px;font-family:Nunito;font-weight:700;line-height:1.5;">Cloud is unreachable — progress is saved on this device.</p>
+                    <p style="color:#78909c;margin-bottom:18px;font-family:monospace;font-size:0.7rem;word-break:break-all;">${esc(String(lastError))}</p>
+                    <button onclick="this.parentElement.parentElement.remove();bootSync(true)" style="width:100%;padding:14px;background:#ffc800;color:#000;border:none;border-radius:12px;cursor:pointer;font-weight:900;font-family:Nunito;text-transform:uppercase;letter-spacing:1px;">Retry</button>
+                    <button onclick="this.parentElement.parentElement.remove()" style="margin-top:8px;width:100%;padding:12px;background:transparent;color:#78909c;border:1px solid #2b3d47;border-radius:12px;cursor:pointer;font-weight:800;font-family:Nunito;">Continue</button>
                 </div>`;
             document.body.appendChild(overlay);
         }
@@ -579,7 +588,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
         const btnAccept = $('btnAccept'), btnFinish = $('btnFinish'), btnClose = $('btnClose');
         const taskStateDesc = $('taskStateDesc'), taskStateProgress = $('taskStateProgress');
         
-        // ИСПРАВЛЕНИЕ: Увеличили REPEATS до 32, чтобы curIdx никогда не выходил за пределы
+        // REPEATS держит запас карточек, чтобы curIdx не выходил за пределы ленты
         const REPEATS = 16; 
         let curIdx = 0, isSpinning = false, winIdx = -1, lastTickY = 0;
 
@@ -605,10 +614,10 @@ document.addEventListener('touchstart', initAudio, { once: true });
                 const inv = (state.inv[id] || []).map((c, k) => `<div class="inv-icon" onclick="useCard(event, ${id}, ${k})">${c.e}${c.val ? `<div class="inv-badge">+${c.val}</div>` : ''}</div>`).join('');
                 return `<div class="player-card p${i % 3 + 1}${active ? ' active' : ''}" onclick="selectPlayer(${id})">
                     <div class="player-content">
-                        <span class="p-avatar" onclick="showQR(event, ${id})" title="Приглашение">${avatarOf(id)}</span>
+                        <span class="p-avatar" onclick="showQR(event, ${id})" title="Invite">${esc(avatarOf(id))}</span>
                         <span class="score-display">${state.score[id] | 0}</span>
                     </div>
-                    <div class="player-name">${nameOf(id)}${id === myId && !hostMode ? ' · я' : ''}</div>
+                    <div class="player-name">${esc(nameOf(id))}${id === myId && !hostMode ? ' · me' : ''}</div>
                     <div class="player-inv">${inv}</div>
                     <div class="player-xp-container"><div class="player-xp-bar"><div class="player-xp-fill" style="width:${Math.min((state.score[id] / MAX_XP) * 100, 100)}%"></div></div></div>
                 </div>`;
@@ -648,47 +657,39 @@ document.addEventListener('touchstart', initAudio, { once: true });
 
         async function runAutotest() {
             const L = [], log = s => { L.push(s); console.log(s); }, t0 = Date.now();
-            let pass = true;
-            log('=== AUTOTEST ' + new Date().toISOString() + ' ===');
+            let pass = true, mine = null;
+            log('=== SYNC CHECK ' + new Date().toISOString() + ' ===');
             log('Origin: ' + location.origin + ' | player: ' + state.p + ' | mode: ' + (cloudReady ? 'cloud' : 'local'));
-            log('Проверяет: доступ к своей строке, запись (upsert), чтение, состояние локальных изменений.\n');
+            log('Read-only check: nothing is written to the database.\n');
 
-            log('--- 1. GET своя строка ---');
+            log('--- 1. My row ---');
             try {
                 const r = await api(`player_data?player_id=eq.${state.p}&select=*`);
                 log('GET ' + r.status);
-                const row = (await r.json())[0];
-                log(row ? `score=${row.score} bag=${row.stolen_bag} updated_at=${row.updated_at}` : 'строки нет — upsert создаст');
-                if (!r.ok) pass = false;
-            } catch (e) { pass = false; log('FAIL: ' + e.message); }
-
-            log('\n--- 2. UPSERT (идемпотентный, данные не меняются) ---');
-            try {
-                const body = rowOf(state.p), t = Date.now();
-                const r = await api('player_data?on_conflict=player_id&select=*', {
-                    method: 'POST',
-                    headers: { 'Prefer': 'resolution=merge-duplicates,return=representation' },
-                    body: JSON.stringify([body])
-                });
-                log('POST ' + r.status + ' за ' + (Date.now() - t) + 'ms');
                 if (!r.ok) throw new Error((await r.text()).slice(0, 160));
-                const got = (await r.json())[0];
-                if (!got) throw new Error('Supabase вернул пустой ответ');
-                const same = got.score === body.score && JSON.stringify(got.progress) === JSON.stringify(body.progress) && JSON.stringify(got.inventory) === JSON.stringify(body.inventory);
-                log(`score=${got.score} updated_at=${got.updated_at}`);
-                log(same ? 'данные совпали с локальными ✅' : `MISMATCH local=${body.score} cloud=${got.score}`);
-                if (!same) pass = false;
+                mine = (await r.json())[0] || null;
+                log(mine ? `name="${esc(mine.name)}" score=${mine.score} updated_at=${mine.updated_at}` : 'row not found — first save will create it');
             } catch (e) { pass = false; log('FAIL: ' + e.message); }
 
-            log('\n--- 3. Все строки ---');
+            log('\n--- 2. Local vs cloud ---');
+            if (mine) {
+                const localScore = state.score[state.p] | 0, cloudScore = mine.score | 0;
+                const sameProg = JSON.stringify(rowOf(state.p).progress) === JSON.stringify(mine.progress);
+                log(`score: local ${localScore} / cloud ${cloudScore} ${localScore === cloudScore ? '✅' : '⚠️ differ'}`);
+                log(`progress: ${sameProg ? 'identical ✅' : 'differ ⚠️'}`);
+                if (isDirty()) log('pending local changes are not pushed yet');
+            }
+
+            log('\n--- 3. Group ---');
             try {
-                const r = await api('player_data?select=player_id,score,stolen_bag,updated_at&order=player_id');
-                (await r.json()).forEach(x => log(`#${x.player_id} score=${x.score} bag=${x.stolen_bag} ${x.updated_at}`));
+                const ids = groupIds();
+                const r = await api(`player_data?player_id=in.(${ids.join(',')})&select=player_id,name,score,updated_at`);
+                log('GET ' + r.status + ' · ids: ' + ids.join(','));
+                (await r.json()).forEach(x => log(`#${x.player_id} "${esc(x.name)}" score=${x.score} ${x.updated_at}`));
                 if (!r.ok) pass = false;
             } catch (e) { pass = false; log('FAIL: ' + e.message); }
 
-            if (isDirty()) log('\n⚠️ Есть локальные изменения, ещё не ушедшие в облако');
-            log(`\n${pass ? '✅ PASS — синхронизация работает' : '❌ FAIL — см. выше'} · ${Date.now() - t0}ms · режим: ${cloudReady ? 'в облаке' : 'только локально'}`);
+            log(`\n${pass ? '✅ PASS — read/write path is healthy' : '❌ FAIL — see above'} · ${Date.now() - t0}ms · mode: ${cloudReady ? 'cloud' : 'local only'}`);
 
             const text = L.join('\n');
             
@@ -756,32 +757,32 @@ document.addEventListener('touchstart', initAudio, { once: true });
         function updateMobileBadge() {
             const badge = $('mobileBadge');
             if (!badge) return;
-            const id = shownId();
+            const id = shownId(), ids = groupIds();
             $('badgeAvatar').textContent = avatarOf(id);
             $('badgeScore').textContent = state.score[id] | 0;
-            badge.className = 'mobile-player-badge p' + (id % 3 + 1);
+            badge.className = 'mobile-player-badge p' + ((Math.max(0, ids.indexOf(id)) % 3) + 1);
         }
 
         window.forcePull = async () => {
             playClick();
-            if (!confirm('Pull: взять данные из облака?\n\nЛокальный прогресс будет заменён данными Supabase.')) return;
+            if (!confirm('Pull: load data from the cloud?\n\nLocal progress will be replaced with what is in Supabase.')) return;
             savedAt = 0; localStorage.removeItem(LS_SAVED);
             cloudReady = false;
             const ok = await bootSync(true);
-            alert(ok ? 'Готово. Данные загружены из Supabase.' : 'Не удалось связаться с Supabase.\n\n' + lastError);
+            alert(ok ? 'Done. Data loaded from Supabase.' : 'Could not reach Supabase.\n\n' + lastError);
         };
 
         window.forcePush = async () => {
             playClick();
             const ids = groupIds().filter(canWrite);
-            if (!ids.length) return alert('Нет карточек, в которые можно писать.');
-            if (!confirm('Push: отправить данные этого устройства в облако?\n\nСтроки: ' + ids.map(nameOf).join(', '))) return;
-            if (!cloudReady && !(await bootSync(false))) return alert('Нет связи с Supabase.\n\n' + lastError);
+            if (!ids.length) return alert('No writable cards on this device.');
+            if (!confirm('Push: send this device data to the cloud?\n\nRows: ' + ids.map(nameOf).join(', '))) return;
+            if (!cloudReady && !(await bootSync(false))) return alert('No connection to Supabase.\n\n' + lastError);
             setSyncStatus('saving');
             let done = 0;
             for (const id of ids) if (await pushPlayer(id, true)) done++;
-            setSyncStatus(done === ids.length ? 'synced' : 'error', 'Отправлено строк: ' + done + ' из ' + ids.length);
-            alert(done === ids.length ? 'Готово. Облако совпадает с этим устройством.' : 'Отправлено ' + done + ' из ' + ids.length + '.\n\n' + lastError);
+            setSyncStatus(done === ids.length ? 'synced' : 'error', 'Rows pushed: ' + done + ' of ' + ids.length);
+            alert(done === ids.length ? 'Done. Cloud matches this device.' : 'Pushed ' + done + ' of ' + ids.length + '.\n\n' + lastError);
         };
 
         window.openResetConfirm = () => { closeSettings(); $('resetConfirmOverlay').classList.add('active'); };
@@ -794,9 +795,9 @@ document.addEventListener('touchstart', initAudio, { once: true });
             try { localStorage.setItem(LS_STATE, JSON.stringify(state)); } catch (e) {}
             clearTimeout(syncTimer);
             updateUI(); $('resetConfirmOverlay').classList.remove('active'); playClick();
-            if (!cloudReady) { setSyncStatus('local', 'Сброс сохранён на устройстве'); return; }
+            if (!cloudReady) { setSyncStatus('local', 'Reset saved on this device'); return; }
             for (const id of groupIds().filter(canWrite)) await pushPlayer(id, true);
-            setSyncStatus('synced', 'Сброс применён');
+            setSyncStatus('synced', 'Reset applied');
         };
 
         window.selectPlayer = id => {
@@ -823,13 +824,13 @@ document.addEventListener('touchstart', initAudio, { once: true });
             const url = token ? `https://m4dsw4ds.github.io/det-practice-wheel/?join=${token}` : `https://m4dsw4ds.github.io/det-practice-wheel/?player=${pId}`;
             $('qrPlayerId').textContent = nameOf(pId);
             $('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}&color=131f24&bgcolor=ffffff`;
-            $('qrCode').textContent = token ? 'Код: ' + token : 'Код появится после синхронизации';
+            $('qrCode').textContent = token ? 'Code: ' + token : 'Code appears after the first sync';
             $('qrOverlay').classList.add('active');
         };
 
         window.useCard = (e, pId, idx) => {
             e.stopPropagation(); playClick();
-            if (!canWrite(pId)) return alert('Это чужая карточка — только просмотр.');
+            if (!canWrite(pId)) return alert('That card is read only.');
             if (state.p !== pId) return alert('Not your turn!');
             const card = state.inv[pId][idx]; if (!card) return;
             if (card.label === 'SHIELD') return alert('Shield is passive!');
@@ -873,7 +874,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
         }
 
         window.createMe = async () => {
-            const name = ($('identName').value || '').trim().slice(0, 14) || ('Игрок ' + Date.now() % 1000);
+            const name = ($('identName').value || '').trim().slice(0, 14) || ('Player ' + Date.now() % 1000);
             try {
                 const r = await api('player_data?select=*', {
                     method: 'POST',
@@ -886,28 +887,28 @@ document.addEventListener('touchstart', initAudio, { once: true });
                 state.p = myId;
                 await finishJoin();
                 await bootSync(true);
-            } catch (e) { alert('Не удалось создать карточку.\n\n' + e.message); }
+            } catch (e) { alert('Could not create the card.\n\n' + e.message); }
         };
 
         window.loginByCode = async () => {
             const token = tokenFrom($('identCode').value);
-            if (!token) return alert('Введи код своей карточки');
+            if (!token) return alert('Enter your card code');
             try {
                 const r = await api(`player_data?token=eq.${encodeURIComponent(token)}&select=*`);
                 const row = (await r.json())[0];
-                if (!row) return alert('Код не найден. Проверь ссылку.');
+                if (!row) return alert('Code not found. Check the link.');
                 await bindMe(row);
                 state.p = myId;
                 await bootSync(true);
-            } catch (e) { alert('Ошибка: ' + e.message); }
+            } catch (e) { alert('Error: ' + e.message); }
         };
 
         async function connectTo(token) {
             const r = await api(`player_data?token=eq.${encodeURIComponent(token)}&select=*`);
             if (!r.ok) throw new Error('HTTP ' + r.status);
             const row = (await r.json())[0];
-            if (!row) throw new Error('код не найден');
-            if (row.player_id === myId) throw new Error('это твой собственный код');
+            if (!row) throw new Error('code not found');
+            if (row.player_id === myId) throw new Error('that is your own code');
             const w = await api('links?on_conflict=owner_id,friend_id', {
                 method: 'POST',
                 headers: { 'Prefer': 'resolution=merge-duplicates,return=minimal' },
@@ -925,26 +926,26 @@ document.addEventListener('touchstart', initAudio, { once: true });
             try {
                 const row = await connectTo(token);
                 await bootSync(false);
-                alert('Ты подключён к ' + (row.name || 'игроку') + '.');
-            } catch (e) { alert('Не удалось подключиться: ' + e.message); }
+                alert('Connected to ' + (row.name || 'player') + '.');
+            } catch (e) { alert('Could not connect: ' + e.message); }
         }
 
         window.joinByCode = async () => {
             const token = tokenFrom($('identCode').value);
-            if (!token) return alert('Введи код или ссылку друга');
-            if (!myId) { pendingJoin = token; return alert('Сначала создай свою карточку — код друга подключится сразу после.'); }
+            if (!token) return alert('Enter a friend code or link');
+            if (!myId) { pendingJoin = token; return alert('Create your card first — the friend code will connect right after.'); }
             try {
                 const row = await connectTo(token);
                 $('identityOverlay').classList.remove('active');
                 await bootSync(false);
-                alert('Ты подключён к ' + (row.name || 'игроку') + '.');
-            } catch (e) { alert('Не удалось подключиться: ' + e.message); }
+                alert('Connected to ' + (row.name || 'player') + '.');
+            } catch (e) { alert('Could not connect: ' + e.message); }
         };
 
         window.renameMe = () => {
             const id = canWrite(state.p) ? state.p : myId;
             if (!id) return window.openIdentity();
-            const name = prompt('Имя карточки (до 14 символов):', (meta[id] && meta[id].name) || '');
+            const name = prompt('Card name (max 14 chars):', (meta[id] && meta[id].name) || '');
             if (name == null) return;
             meta[id] = Object.assign({ name: '', avatar: '🦉', token: '' }, meta[id], { name: name.trim().slice(0, 14) });
             updateUI();
@@ -1000,7 +1001,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
             if (stolen) {
                 if (!state.stolenBag) state.stolenBag = {1:0, 2:0, 3:0};
                 state.stolenBag[state.p] += baseXP + bonusXP;
-                showEventModal('🐈‍⬛', 'CAT IN A BAG', `The Cat stole your <b>+${baseXP} XP</b>!<br><br>But you keep your progress (${state.prog[state.p][sector.id]}/6).<br><br><span style=\"opacity:0.7\">🐈‍⬛ Съел: +${baseXP} XP в мешок</span>`, 'var(--p1-color)', 'Damn Cat 😿', null); playWin('cat'); 
+                showEventModal('🐈‍⬛', 'CAT IN A BAG', `The Cat stole your <b>+${baseXP} XP</b>!<br><br>But you keep your progress (${state.prog[state.p][sector.id]}/6).<br><br><span style=\"opacity:0.7\">🐈‍⬛ Stashed: +${baseXP} XP in the bag</span>`, 'var(--p1-color)', 'Damn Cat 😿', null); playWin('cat'); 
             } else { state.score[state.p] += baseXP + bonusXP; }
             
             save(); updateUI(); closeModal();
