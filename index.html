@@ -433,7 +433,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
         let savedAt = +(localStorage.getItem(LS_SAVED) || 0), syncedAt = +(localStorage.getItem(LS_SYNCED) || 0);
         const isDirty = () => savedAt > syncedAt;
 
-        let myId = +(localStorage.getItem(LS_MY) || 0);
+        let myId = +(localStorage.getItem(LS_MY) || 0) || 0;
         let hostMode = localStorage.getItem(LS_HOST) === '1';
         let viewId = 0, friendIds = [], pendingJoin = '';
         const meta = {};                                   // id -> {name, avatar, token}
@@ -584,13 +584,13 @@ document.addEventListener('touchstart', initAudio, { once: true });
         let curIdx = 0, isSpinning = false, winIdx = -1, lastTickY = 0;
 
         const getCardHeight = () => { const c = drumTrack.querySelector('.drum-card'); if (!c) return 95; const st = window.getComputedStyle(c); return c.offsetHeight + (parseFloat(st.marginTop) || 0) + (parseFloat(st.marginBottom) || 0); };
-        function renderDrum() { drumTrack.innerHTML = Array(REPEATS).fill(allSectors.map((s, i) => { const isMaxed = s.type === 'skill' && state.prog[state.p][s.id] >= 6; return `<div class="drum-card" data-i="${i}" ${isMaxed ? 'style="opacity:0.4"' : ''}><span class="drum-emoji">${s.e}</span><span class="drum-label">${s.l}</span></div>`; }).join('')).join(''); }
+        function renderDrum() { drumTrack.innerHTML = Array(REPEATS).fill(allSectors.map((s, i) => { const isMaxed = s.type === 'skill' && (state.prog[state.p] || {})[s.id] >= 6; return `<div class="drum-card" data-i="${i}" ${isMaxed ? 'style="opacity:0.4"' : ''}><span class="drum-emoji">${s.e}</span><span class="drum-label">${s.l}</span></div>`; }).join('')).join(''); }
         function setPos(idx, animate = false) { const h = getCardHeight(), off = -(idx * h) + (drumWrapper.clientHeight / 2 - h / 2); drumTrack.style.transition = animate ? 'transform 6s cubic-bezier(0.1, 0.9, 0.2, 1)' : 'none'; drumTrack.style.transform = `translateY(${off}px)`; document.querySelectorAll('.drum-card').forEach(c => c.classList.remove('winner', 'blink-effect', 'blink-gold', 'blink-blue', 'blink-flash')); if (drumTrack.children[idx]) drumTrack.children[idx].classList.add('winner'); }
 
         function renderSkills() {
             const src = viewId || state.p;
             $('skillsGrid').innerHTML = skills.map(s => {
-                const prog = state.prog[src][s.id];
+                const prog = (state.prog[src] || {})[s.id] || 0;
                 let segs = Array(6).fill(0).map((_, i) => `<div class="skill-seg ${i < prog ? 'filled' : ''}"></div>`).join('');
                 return `<div class="skill-item ${prog >= 6 ? 'done' : ''}"><div class="skill-name"><span>${s.e}</span><span>${s.l}</span></div><div class="skill-bar">${segs}</div></div>`;
             }).join('');
@@ -638,7 +638,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
             document.querySelectorAll('.drum-card').forEach(card => {
                 const i = parseInt(card.dataset.i);
                 const s = allSectors[i];
-                if (s.type === 'skill' && state.prog[state.p][s.id] >= 6) {
+                if (s.type === 'skill' && (state.prog[state.p] || {})[s.id] >= 6) {
                     card.style.opacity = '0.4';
                 } else {
                     card.style.opacity = '1';
@@ -1025,6 +1025,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
         function executeSpin() {
             if (isSpinning) return;
             if (viewId) { viewId = 0; updateUI(); }
+            ensurePlayer(state.p);
             initAudio(); playStart();
             if (curIdx >= (REPEATS - 2) * allSectors.length) {
                 curIdx = Math.floor(REPEATS / 2) * allSectors.length + (curIdx % allSectors.length);
@@ -1065,6 +1066,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
             btnFinish.style.display = 'none'; btnAccept.style.display = 'block'; btnAccept.textContent = 'START TASK'; btnAccept.disabled = false;
             
             if (sector.type === 'skill') {
+                ensurePlayer(state.p);
                 const p = state.prog[state.p][sector.id]; 
                 if (p >= 6) { $('modalDesc').innerHTML = `Already maxed!`; btnAccept.disabled = true; btnAccept.textContent = 'MAXED OUT (6/6)'; }
                 else { $('modalDesc').innerHTML = `${sector.d}<br><br><span class="xp-badge">+${sector.value} XP</span>`; }
@@ -1154,6 +1156,7 @@ window.addEventListener('keydown', (e) => {
             if (urlPlayer && !myId) { myId = urlPlayer; localStorage.setItem(LS_MY, myId); localStorage.setItem(LS_MIGR, '1'); }
             pendingJoin = params.get('join') || '';
             if (myId) state.p = myId;
+            ensurePlayer(state.p);
             renderDrum();
             updateUI();
             setTimeout(() => { curIdx = Math.floor(REPEATS / 2) * allSectors.length; setPos(curIdx); }, 50);
