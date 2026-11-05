@@ -63,13 +63,13 @@
         .player-card.p3.active .p-avatar { --player-color: var(--p3-color); animation: pulse-glow 2s infinite ease-in-out; }
 
         .p-avatar { font-size: 2.4rem; line-height: 1; cursor: pointer; transition: 0.2s; }
-        .score-display { font-family: 'Share Tech Mono', monospace; font-size: 1.1rem; background: rgba(0,0,0,0.5); padding: 2px 8px; border-radius: 6px; color: var(--sys-gold); border: 1px solid var(--sys-gold); box-shadow: 0 0 10px rgba(255, 200, 0, 0.2); }
+        .score-display { font-family: 'Share Tech Mono', monospace; font-size: 1.4rem; background: rgba(0,0,0,0.5); padding: 2px 10px; border-radius: 6px; color: var(--sys-gold); border: 1px solid var(--sys-gold); box-shadow: 0 0 10px rgba(255, 200, 0, 0.2); min-width: 52px; text-align: center; }
         .player-inv { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; min-height: 32px; width: 100%; }
         .inv-icon { position: relative; width: 32px; height: 32px; background: #0d161a; border: 1px solid var(--border); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 1rem; cursor: pointer; transition: 0.2s; }
         .inv-icon:active { transform: scale(1.15); border-color: var(--sys-cyan); box-shadow: 0 0 10px var(--sys-cyan); }
         .inv-badge { position: absolute; bottom: -4px; right: -4px; background: var(--sys-gold); color: #000; font-size: 0.5rem; font-weight: 900; padding: 1px 3px; border-radius: 4px; border: 1px solid #000; line-height: 1;}
         .player-xp-container { width: 100%; margin-top: 2px; }
-        .player-xp-bar { width: 100%; height: 8px; background: rgba(0,0,0,0.6); border-radius: 4px; border: 1px solid var(--border); position: relative; overflow: hidden; }
+        .player-xp-bar { width: 100%; height: 12px; background: rgba(0,0,0,0.6); border-radius: 6px; border: 1px solid var(--border); position: relative; overflow: hidden; }
         .player-xp-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--sys-cyan) 0%, var(--sys-green) 50%, var(--sys-gold) 100%); box-shadow: 0 0 10px var(--sys-green); transition: 0.5s ease; border-radius: 4px; }
 
         .drum-wrapper { position: relative; width: 100%; max-width: 420px; height: 100%; background: var(--panel); border-radius: 24px; border: 2px solid var(--border); overflow: hidden; display: flex; flex-direction: column; align-items: center; box-shadow: 0 0 40px rgba(0,0,0,0.5); }
@@ -129,10 +129,7 @@
         .btn-danger { background: #ff4b4b; border-bottom: 4px solid #cc0000; color: #fff; }
         .btn-danger:active { transform: translateY(4px); border-bottom: 0; }
         
-        .cat-modal { border-color: var(--p1-color); box-shadow: 0 0 50px rgba(255, 75, 75, 0.2); }
-        .cat-title { color: var(--p1-color); font-family: 'Nunito', sans-serif; font-size: 2rem; font-weight: 900; text-transform: uppercase; margin-bottom: 10px; }
-        .shield-modal { border-color: var(--sys-cyan); }
-        .shield-title { color: var(--sys-cyan); font-family: 'Nunito', sans-serif; font-size: 2rem; font-weight: 900; text-transform: uppercase; margin-bottom: 10px; }
+
         
         .lucky-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; margin-bottom: 15px; width: 100%; }
         .lucky-btn { background: #0d161a; border: 1px solid #2b3d47; color: #fff; padding: 10px 5px; border-radius: 8px; font-size: 0.8rem; font-weight: 800; cursor: pointer; transition: 0.2s; }
@@ -143,9 +140,15 @@
         .settings-title { font-family: 'Nunito', font-size: 1.5rem; font-weight: 900; color: var(--sys-gold); margin-bottom: 20px; text-transform: uppercase;}
         
         #syncIndicator {
-            position: fixed; bottom: 15px; left: 15px; font-size: 1.2rem; z-index: 50;
-            transition: opacity 0.5s; opacity: 0.5;
+            position: fixed; bottom: 12px; left: 12px; z-index: 50; cursor: help;
+            font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 0.7rem; letter-spacing: 0.3px;
+            padding: 6px 10px; border-radius: 999px; border: 1px solid var(--border);
+            background: rgba(13, 22, 26, 0.92); color: #90a4ae; transition: color 0.3s, border-color 0.3s;
         }
+        #syncIndicator[data-mode="saving"] { color: #fff; border-color: #546e7a; }
+        #syncIndicator[data-mode="synced"] { color: var(--sys-cyan); border-color: var(--sys-cyan); }
+        #syncIndicator[data-mode="local"]  { color: var(--sys-gold); border-color: var(--sys-gold); }
+        #syncIndicator[data-mode="error"]  { color: #ff4b4b; border-color: #ff4b4b; }
 
         @media (min-width: 1200px) {
             .game-layout { display: grid; grid-template-columns: 260px 420px 290px; justify-content: center; align-items: stretch; gap: 30px; width: 100%; height: 520px; margin: 0 auto; }
@@ -155,7 +158,7 @@
             .right-panel { display: flex; grid-column: 3; width: 100%; height: 100%; }
         }
         .modal.danger { border-color: #ff4b4b; }
-        .modal.gold-border { border-color: var(--sys-gold); box-shadow: 0 0 50px rgba(255, 200, 0, 0.4); }
+
         .mobile-player-badge { display: none; }
         @media (max-width: 768px) {
             body { padding: 5px; height: 100dvh; }
@@ -189,6 +192,8 @@
             .drum-emoji { font-size: 1.6rem; }
             .drum-label { font-size: 0.9rem; }
             .skill-item { padding: 8px; }
+            .inv-icon { width: 42px; height: 42px; font-size: 1.4rem; }
+            .player-inv { min-height: 42px; gap: 6px; }
             .modal { max-width: 90vw; max-height: 90vh; overflow-y: auto; }
         }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
@@ -260,8 +265,9 @@
             <div class="modal-close-x" onclick="closeSettings()">×</div>
             <h2 class="settings-title">Настройки</h2>
             <div class="action-btns">
-                <button class="btn btn-accept" onclick="forcePull()">🔄 Force Pull (cloud → local)</button>
-                <button class="btn btn-accept" onclick="forcePush()" style="background: #ff9600; border-bottom-color: #cc6600;">☁️ Force Push (local → cloud)</button>
+                <button class="btn btn-accept" onclick="forcePull()">🔄 Pull: облако → устройство</button>
+                <button class="btn btn-accept" onclick="forcePush()" style="background: #ff9600; border-bottom-color: #cc6600;">☁️ Push: устройство → облако</button>
+                <button class="btn btn-close" onclick="closeSettings(); runAutotest()">🩺 Проверить синхронизацию</button>
                 <button class="btn btn-danger" onclick="openResetConfirm()">Сбросить прогресс</button>
                 <button class="btn btn-close" onclick="closeSettings()">Закрыть</button>
             </div>
@@ -329,9 +335,8 @@
     <script>
         let isMuted = false;
 
-        const BIN_ID = "6ae9fd41ffd5d16053a2dede"; 
-        const ACCESS_KEY = "$2a$10$mayIaTaQgZYqqFY2qGK4e.CCH/1qK0a.F4Nepbn56WyCIne3kMUzS"; 
-const AUTOTEST_RUNNING = false; // Заглушка для внешних тестов (Playwright)
+        const SUPABASE_URL = "https://qjvanbuqrfvbhjjzcwjg.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_QzcuLjeW_gjTHVXnLEvWGA_o9kxjoQn";
 
         const canvas = document.getElementById('matrixCanvas'), ctx = canvas.getContext('2d');
         const chars = '01ABCDEFGHIJKLMNOPQRSTUVWXYZ'; const fontSize = 14; let w, h, columns, drops = [];
@@ -395,76 +400,134 @@ document.addEventListener('touchstart', initAudio, { once: true });
         const allSectors = [...skills.map(s => ({...s, type:'skill'})), ...bonuses.map(b => ({...b, type:'bonus', id:'bonus_'+b.label}))];
         const MAX_XP = 40000;
 
-        const getDefaultState = () => ({ p: 1, score: {1:0, 2:0, 3:0}, prog: {1:{}, 2:{}, 3:{}}, inv: {1:[], 2:[], 3:[]} });
-        let state = JSON.parse(localStorage.getItem('detGame_v23')) || getDefaultState();
+        const getDefaultState = () => ({ p: 1, score: {1:0, 2:0, 3:0}, prog: {1:{}, 2:{}, 3:{}}, inv: {1:[], 2:[], 3:[]}, stolenBag: {1:0, 2:0, 3:0} });
+        let state;
+try { state = JSON.parse(localStorage.getItem('detGame_v23')) || getDefaultState(); }
+catch(e) { console.warn('Corrupt localStorage, reset:', e); state = getDefaultState(); }
         [1, 2, 3].forEach(p => { if (!state.prog[p]) state.prog[p] = {}; skills.forEach(s => { if (state.prog[p][s.id] === undefined) state.prog[p][s.id] = 0; }); });
 
         const syncInd = document.getElementById('syncIndicator');
 
-        let stateLoaded = false;
-        let cloudUnreachable = false;
+        // ==== SUPABASE SYNC: одна строка = один игрок ====
+        const PLAYERS = 3, LS_STATE = 'detGame_v23', LS_SAVED = 'detGame_savedAt', LS_SYNCED = 'detGame_syncedAt', LS_LINK = 'detGame_linkedPlayer';
+        let cloudReady = false, syncTimer = null, bootTimer = null, bannerShown = false, migratePending = false, lastError = '';
+        let savedAt = +(localStorage.getItem(LS_SAVED) || 0), syncedAt = +(localStorage.getItem(LS_SYNCED) || 0);
+        const isDirty = () => savedAt > syncedAt;
 
-        function buildPayload(extra = {}) {
-            const payload = { players: {} };
-            for (let i = 1; i <= 6; i++) {
-                payload.players[i] = { score: state.score[i] || 0, progress: state.prog[i] || {}, inventory: state.inv[i] || [] };
+        const api = (path, opt = {}) => fetch(`${SUPABASE_URL}/rest/v1/${path}`, Object.assign({}, opt, {
+            headers: Object.assign({ 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' }, opt.headers || {})
+        }));
+
+        function setSyncStatus(mode, detail) {
+            syncInd.dataset.mode = mode;
+            syncInd.textContent = { saving: '⏳ сохранение…', synced: '🔵 в облаке', local: '🟡 только локально', error: '🔴 ошибка' }[mode] || mode;
+            syncInd.title = detail || syncInd.textContent;
+        }
+
+        const rowOf = p => ({ player_id: p, score: state.score[p] | 0, stolen_bag: (state.stolenBag && state.stolenBag[p]) | 0, progress: state.prog[p] || {}, inventory: state.inv[p] || [] });
+
+        function applyRow(r) {
+            const p = r.player_id;
+            if (!(p >= 1 && p <= PLAYERS)) return;
+            state.score[p] = r.score | 0;
+            state.prog[p] = r.progress || {};
+            state.inv[p] = r.inventory || [];
+            if (!state.stolenBag) state.stolenBag = { 1: 0, 2: 0, 3: 0 };
+            state.stolenBag[p] = r.stolen_bag | 0;
+            skills.forEach(s => { if (state.prog[p][s.id] === undefined) state.prog[p][s.id] = 0; });
+        }
+
+        async function pushPlayer(p = state.p, quiet = false) {
+            if (!cloudReady) { setSyncStatus('local', 'Облако недоступно — прогресс сохранён на устройстве'); return false; }
+            const stamp = Date.now();
+            if (!quiet) setSyncStatus('saving');
+            try {
+                const r = await api('player_data?on_conflict=player_id&select=updated_at', {
+                    method: 'POST',
+                    headers: { 'Prefer': 'resolution=merge-duplicates,return=representation' },
+                    body: JSON.stringify([rowOf(p)])
+                });
+                if (!r.ok) throw new Error('HTTP ' + r.status + ' · ' + (await r.text()).slice(0, 140));
+                const row = (await r.json())[0] || {};
+                syncedAt = Math.max(syncedAt, stamp);
+                localStorage.setItem(LS_SYNCED, syncedAt);
+                setSyncStatus('synced', 'Игрок ' + p + ' сохранён в Supabase · ' + (row.updated_at || ''));
+                return true;
+            } catch (e) {
+                lastError = String(e.message || e);
+                setSyncStatus('error', 'Запись не удалась: ' + lastError);
+                return false;
             }
-            return Object.assign(payload, extra);
         }
 
-        function setSyncStatus(status) {
-            if (status === 'saving') syncInd.textContent = '⏳';
-            else if (status === 'saved') { syncInd.textContent = '✅'; setTimeout(() => syncInd.style.opacity = '0.5', 1500); }
-            else if (status === 'error') { syncInd.textContent = '⚠️'; syncInd.style.opacity = '1'; }
-        }
-
-        async function syncToCloud() {
-    try {
-        setSyncStatus('saving');
-        const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Access-Key': ACCESS_KEY }, body: JSON.stringify(buildPayload()) });
-        if (!res.ok) throw new Error("Network response was not ok");
-        setSyncStatus('saved');
-        return true;
-    } catch (error) { 
-        console.warn("Ошибка синхронизации:", error); 
-        setSyncStatus('error');
-        return false;
-    }
-}
-
-        async function syncFromCloud(attemptsLeft = 2) {
-    try {
-        const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, { headers: { 'X-Access-Key': ACCESS_KEY } });
-        if (!response.ok) throw new Error("HTTP " + response.status);
-        const data = await response.json();
-        if (data.record && data.record.players) {
-            for (let i = 1; i <= 6; i++) if (data.record.players[i]) { 
-                state.score[i] = data.record.players[i].score || 0; 
-                state.prog[i] = data.record.players[i].progress || {}; 
-                state.inv[i] = data.record.players[i].inventory || []; 
-            }
-            updateUI(); 
-        }
-        setSyncStatus('saved');
-        stateLoaded = true;
-        cloudUnreachable = false;
-        return true;
-    } catch (error) { 
-        console.warn(`Sync failed (retries left: ${attemptsLeft}):`, error); 
-        if (attemptsLeft > 0) {
-            await new Promise(r => setTimeout(r, 2000));
-            return syncFromCloud(attemptsLeft - 1);
-        }
-        setSyncStatus('error');
-        cloudUnreachable = true;
-        return false;
-    }
-}
-
-        const save = () => { 
-            try { localStorage.setItem('detGame_v23', JSON.stringify(state)); } catch(e){} 
-            if (stateLoaded && !cloudUnreachable) syncToCloud();
+        const save = () => {
+            savedAt = Date.now();
+            localStorage.setItem(LS_SAVED, savedAt);
+            try { localStorage.setItem(LS_STATE, JSON.stringify(state)); } catch (e) {}
+            setSyncStatus(cloudReady ? 'saving' : 'local');
+            clearTimeout(syncTimer);
+            syncTimer = setTimeout(() => pushPlayer(state.p), 400);
         };
+
+        async function pullAll(applyMine = true) {
+            const r = await api('player_data?select=player_id,score,stolen_bag,progress,inventory,updated_at&order=player_id');
+            if (!r.ok) throw new Error('HTTP ' + r.status + ' · ' + (await r.text()).slice(0, 140));
+            const rows = await r.json();
+            rows.forEach(row => { if (applyMine || row.player_id !== state.p) applyRow(row); });
+            return rows;
+        }
+
+        async function bootSync(allowBanner = false) {
+            setSyncStatus('saving', 'Читаю облако…');
+            try {
+                const pending = migratePending;
+                const wasDirty = isDirty() || pending;
+                const rows = await pullAll(!wasDirty);
+                cloudReady = true;
+                updateUI();
+                if (pending) {
+                    for (const p of [1, 2, 3]) if (!(await pushPlayer(p, true))) throw new Error(lastError);
+                    migratePending = false;
+                    localStorage.setItem('detGame_migrated', '1');
+                    setSyncStatus('synced', 'Локальный прогресс игроков перенесён в Supabase');
+                } else if (!rows.some(x => x.player_id === state.p) || wasDirty) { if (!(await pushPlayer(state.p))) throw new Error(lastError); }
+                else setSyncStatus('synced', 'Игрок ' + state.p + ' загружен из Supabase');
+                bannerShown = false;
+                return true;
+            } catch (e) {
+                lastError = String(e.message || e);
+                if (cloudReady) { setSyncStatus('error', 'Запись в облако отклонена: ' + lastError); return false; }
+                cloudReady = false;
+                setSyncStatus('local', 'Нет связи с Supabase: ' + lastError + '. Прогресс на этом устройстве, повтор каждые 15 с.');
+                if (allowBanner && !bannerShown) { bannerShown = true; showSyncBanner(); }
+                clearTimeout(bootTimer);
+                bootTimer = setTimeout(() => { if (!cloudReady) bootSync(false); }, 15000);
+                return false;
+            }
+        }
+
+        // одноразовая миграция: прогресс, накопленный до Supabase, уходит в облако, а не затирается нулями
+        function migrateLocalOnce() {
+            if (localStorage.getItem('detGame_migrated')) return;
+            const hasLocal = [1, 2, 3].some(p => (state.score[p] | 0) > 0 || (state.inv[p] || []).length || Object.values(state.prog[p] || {}).some(v => v > 0));
+            if (hasLocal) { migratePending = true; savedAt = Date.now(); localStorage.setItem(LS_SAVED, savedAt); }
+            else localStorage.setItem('detGame_migrated', '1');
+        }
+
+        function showSyncBanner() {
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(10,15,20,0.95);backdrop-filter:blur(5px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+            overlay.innerHTML = `
+                <div style="background:var(--panel);border:2px solid #ffc800;border-radius:20px;padding:25px;max-width:400px;text-align:center;box-shadow:0 0 50px rgba(255,200,0,0.25);">
+                    <span style="font-size:3.4rem;display:block;margin-bottom:10px;">🟡</span>
+                    <h2 style="color:#ffc800;margin-bottom:12px;font-family:Nunito;text-transform:uppercase;">Только локально</h2>
+                    <p style="color:#b0bec5;margin-bottom:8px;font-family:Nunito;font-weight:700;line-height:1.5;">Облако недоступно — прогресс пишется на это устройство.</p>
+                    <p style="color:#78909c;margin-bottom:18px;font-family:monospace;font-size:0.7rem;word-break:break-all;">${String(lastError).replace(/</g, '&lt;')}</p>
+                    <button onclick="this.parentElement.parentElement.remove();bootSync(true)" style="width:100%;padding:14px;background:#ffc800;color:#000;border:none;border-radius:12px;cursor:pointer;font-weight:900;font-family:Nunito;text-transform:uppercase;letter-spacing:1px;">Повторить</button>
+                    <button onclick="this.parentElement.parentElement.remove()" style="margin-top:8px;width:100%;padding:12px;background:transparent;color:#78909c;border:1px solid #2b3d47;border-radius:12px;cursor:pointer;font-weight:800;font-family:Nunito;">Продолжить</button>
+                </div>`;
+            document.body.appendChild(overlay);
+        }
 
         const $ = id => document.getElementById(id);
         const drumTrack = $('drumTrack'), drumWrapper = $('drumWrapper'), spinBtn = $('spinBtn');
@@ -519,122 +582,65 @@ document.addEventListener('touchstart', initAudio, { once: true });
         }
 
         async function runAutotest() {
-            const lines = [];
-            const log = (s) => { lines.push(s); console.log(s); };
-            const t0 = Date.now();
-            log("=== AUTOTEST " + new Date().toISOString() + " ===");
-            log("Origin: " + location.origin);
-            log("UA: " + navigator.userAgent.substring(0, 100));
-            log("");
+            const L = [], log = s => { L.push(s); console.log(s); }, t0 = Date.now();
+            let pass = true;
+            log('=== AUTOTEST ' + new Date().toISOString() + ' ===');
+            log('Origin: ' + location.origin + ' | player: ' + state.p + ' | mode: ' + (cloudReady ? 'cloud' : 'local'));
+            log('Проверяет: доступ к своей строке, запись (upsert), чтение, состояние локальных изменений.\n');
 
-            let step1 = false, step2 = false, step3 = false, cleanup = false;
-
-            // STEP 1: GET baseline
-            log("--- STEP 1: GET baseline ---");
-            let baseline = null;
+            log('--- 1. GET своя строка ---');
             try {
-                const r = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, { headers: { 'X-Access-Key': ACCESS_KEY } });
-                log("GET status: " + r.status);
-                if (r.ok) {
-                    const d = await r.json();
-                    baseline = d.record;
-                    log("Cloud score: " + JSON.stringify({ p1: d.record?.players?.[1]?.score, p2: d.record?.players?.[2]?.score, p3: d.record?.players?.[3]?.score }));
-                    log("Cloud updatedAt: " + (d.metadata?.updatedAt || '?'));
-                    step1 = true;
-                } else {
-                    log("GET body: " + (await r.text()).substring(0, 200));
-                }
-            } catch(e) { log("GET FAILED: " + e.name + " — " + e.message); }
-            log(step1 ? "STEP 1: PASS" : "STEP 1: FAIL");
-            log("");
+                const r = await api(`player_data?player_id=eq.${state.p}&select=*`);
+                log('GET ' + r.status);
+                const row = (await r.json())[0];
+                log(row ? `score=${row.score} bag=${row.stolen_bag} updated_at=${row.updated_at}` : 'строки нет — upsert создаст');
+                if (!r.ok) pass = false;
+            } catch (e) { pass = false; log('FAIL: ' + e.message); }
 
-            // STEP 2: PUT probe (uses BASELINE from cloud, NOT local state)
-            if (step1 && baseline) {
-                log("--- STEP 2: PUT probe (preserving cloud data) ---");
-                const probeTs = Date.now();
-                window._autotestProbeTs = probeTs;
-                const payloadWithProbe = JSON.parse(JSON.stringify(baseline));
-                payloadWithProbe._probe = { ts: probeTs, device: navigator.userAgent.substring(0, 60) };
-                try {
-                    const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json', 'X-Access-Key': ACCESS_KEY },
-                        body: JSON.stringify(payloadWithProbe)
-                    });
-                    log("PUT status: " + res.status);
-                    step2 = res.ok;
-                } catch(e) { log("PUT FAILED: " + e.name + " — " + e.message); }
-                log(step2 ? "STEP 2: PASS" : "STEP 2: FAIL");
-                log("");
-            }
+            log('\n--- 2. UPSERT (идемпотентный, данные не меняются) ---');
+            try {
+                const body = rowOf(state.p), t = Date.now();
+                const r = await api('player_data?on_conflict=player_id&select=*', {
+                    method: 'POST',
+                    headers: { 'Prefer': 'resolution=merge-duplicates,return=representation' },
+                    body: JSON.stringify([body])
+                });
+                log('POST ' + r.status + ' за ' + (Date.now() - t) + 'ms');
+                if (!r.ok) throw new Error((await r.text()).slice(0, 160));
+                const got = (await r.json())[0];
+                if (!got) throw new Error('Supabase вернул пустой ответ');
+                const same = got.score === body.score && JSON.stringify(got.progress) === JSON.stringify(body.progress) && JSON.stringify(got.inventory) === JSON.stringify(body.inventory);
+                log(`score=${got.score} updated_at=${got.updated_at}`);
+                log(same ? 'данные совпали с локальными ✅' : `MISMATCH local=${body.score} cloud=${got.score}`);
+                if (!same) pass = false;
+            } catch (e) { pass = false; log('FAIL: ' + e.message); }
 
-            // STEP 3: GET verify
-            if (step2) {
-                log("--- STEP 3: GET verify probe ---");
-                await new Promise(r => setTimeout(r, 800));
-                try {
-                    const r = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, { headers: { 'X-Access-Key': ACCESS_KEY } });
-                    log("GET status: " + r.status);
-                    if (r.ok) {
-                        const d = await r.json();
-                        const cloudProbe = d.record?._probe?.ts;
-                        log("Cloud _probe.ts: " + cloudProbe);
-                        log("Expected:      " + window._autotestProbeTs);
-                        step3 = (cloudProbe === window._autotestProbeTs);
-                    }
-                } catch(e) { log("VERIFY GET FAILED: " + e.name + " — " + e.message); }
-                log(step3 ? "STEP 3: PASS" : "STEP 3: FAIL");
-                log("");
-            }
-// STEP 4: Cleanup (restore baseline exactly, no probe key)
-    if (step2 && baseline) {
-        log("--- STEP 4: Cleanup (restore baseline) ---");
-        const payloadClean = JSON.parse(JSON.stringify(baseline));
-        delete payloadClean._probe;
-        try {
-            const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'X-Access-Key': ACCESS_KEY },
-                body: JSON.stringify(payloadClean)
-            });
-            log("Cleanup PUT status: " + res.status);
-            cleanup = res.ok;
-        } catch(e) { log("CLEANUP FAILED: " + e.name + " — " + e.message); }
-        log(cleanup ? "STEP 4: PASS" : "STEP 4: FAIL");
-    }
+            log('\n--- 3. Все строки ---');
+            try {
+                const r = await api('player_data?select=player_id,score,stolen_bag,updated_at&order=player_id');
+                (await r.json()).forEach(x => log(`#${x.player_id} score=${x.score} bag=${x.stolen_bag} ${x.updated_at}`));
+                if (!r.ok) pass = false;
+            } catch (e) { pass = false; log('FAIL: ' + e.message); }
 
-    log("");
-    log("--- RESULT ---");
-    const allPass = step1 && step2 && step3 && cleanup;
-    log("Duration: " + (Date.now() - t0) + "ms");
-    log(allPass ? "✅ ALL PASS — sync works" : "❌ FAIL — see steps above");
+            if (isDirty()) log('\n⚠️ Есть локальные изменения, ещё не ушедшие в облако');
+            log(`\n${pass ? '✅ PASS — синхронизация работает' : '❌ FAIL — см. выше'} · ${Date.now() - t0}ms · режим: ${cloudReady ? 'в облаке' : 'только локально'}`);
 
-    const text = lines.join("\n");
-    console.log(text);
+            const text = L.join('\n');
             
             window._autotestText = text;
 
             const overlay = document.createElement('div');
             overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:99999;padding:15px;overflow:auto;';
-            const borderColor = allPass ? '#00e5ff' : '#ff4b4b';
-            const statusIcon = allPass ? '✅' : '❌';
+            const color = pass ? '#00e5ff' : '#ff4b4b';
             overlay.innerHTML = `
-                <div style="max-width:600px;margin:0 auto;background:#131f24;padding:20px;border-radius:12px;border:2px solid ${borderColor};">
-                    <h2 style="color:${borderColor};margin-bottom:10px;font-family:Nunito;">${statusIcon} AUTOTEST ${allPass ? 'PASS' : 'FAIL'}</h2>
-                    <pre id="autotestOutput" style="background:#000;color:#0f0;padding:12px;border-radius:8px;font-size:11px;white-space:pre-wrap;word-break:break-all;user-select:text;font-family:monospace;line-height:1.5;">${text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
+                <div style="max-width:600px;margin:0 auto;background:#131f24;padding:20px;border-radius:12px;border:2px solid ${color};">
+                    <h2 style="color:${color};margin-bottom:10px;font-family:Nunito;">${pass ? '✅' : '❌'} AUTOTEST ${pass ? 'PASS' : 'FAIL'}</h2>
+                    <pre style="background:#000;color:#0f0;padding:12px;border-radius:8px;font-size:11px;white-space:pre-wrap;word-break:break-all;user-select:text;font-family:monospace;line-height:1.5;">${text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
                     <button onclick="window.copyAutotest()" style="margin-top:8px;width:100%;padding:12px;background:#00e5ff;color:#000;border:none;border-radius:8px;cursor:pointer;font-weight:900;font-family:Nunito;">📋 Copy</button>
                     <button onclick="this.parentElement.parentElement.remove()" style="margin-top:8px;width:100%;padding:12px;background:#ff4b4b;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:900;font-family:Nunito;">Close</button>
-                </div>
-            `;
+                </div>`;
             document.body.appendChild(overlay);
-            if (!window._autotestShowModal) {
-                overlay.remove();
-                syncInd.textContent = allPass ? '🟢' : '🔴';
-                syncInd.style.opacity = '1';
-                syncInd.title = allPass ? 'Sync OK' : 'Sync FAIL (tap for details)';
-                syncInd.style.cursor = 'pointer';
-                syncInd.onclick = () => { window._autotestShowModal = true; runAutotest(); window._autotestShowModal = false; };
-            }
+            return pass;
         }
 
         window.copyAutotest = function() {
@@ -665,6 +671,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
             }
         }
 
+        window.closeCardModal = () => { $('luckyOverlay').classList.remove('active'); playClick(); };
         window.openSettings = () => { $('settingsOverlay').classList.add('active'); playClick(); };
         window.closeSettings = () => { $('settingsOverlay').classList.remove('active'); playClick(); };
 
@@ -675,6 +682,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
             document.querySelectorAll('.det-letter').forEach(l => l.classList.toggle('active', l.dataset.view === view));
             localStorage.setItem('detGame_mobileView', view);
             if (view === 'wheel') setTimeout(() => setPos(curIdx), 50);
+            if (view === 'players' && cloudReady) pullAll(false).then(updateUI).catch(() => {});
         };
 
         function updateMobileBadge() {
@@ -686,50 +694,48 @@ document.addEventListener('touchstart', initAudio, { once: true });
             badge.className = 'mobile-player-badge p' + state.p;
         }
         window.forcePull = async () => {
-    playClick();
-    if (!confirm('Force PULL: overwrite local data with CLOUD data?\n\nLocal progress will be replaced by what is on the server.')) return;
-    cloudUnreachable = false;
-    const ok = await syncFromCloud(3);
-    if (ok) {
-        alert('Pull complete. Cloud data loaded.');
-    } else {
-        alert('Pull FAILED. Cloud unreachable.\n\nOn Brave: disable Shields for this site.\nOn Chrome: check internet.');
-    }
-};
-
-window.forcePush = async () => {
-    playClick();
-    if (!confirm('Force PUSH: overwrite CLOUD data with local data?\n\nServer progress will be replaced by THIS device.')) return;
-    stateLoaded = true;
-    cloudUnreachable = false;
-    setSyncStatus('saving');
-    try {
-        const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Access-Key': ACCESS_KEY }, body: JSON.stringify(buildPayload()) });
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        setSyncStatus('saved');
-        alert('Push complete. Cloud now matches this device.');
-    } catch (e) {
-        setSyncStatus('error');
-        cloudUnreachable = true;
-        alert('Push FAILED. Cloud unreachable.\n\nOn Brave: disable Shields for this site.');
-    }
-};
-
-window.openResetConfirm = () => { closeSettings(); $('resetConfirmOverlay').classList.add('active'); };
-        window.confirmResetProgress = () => {
-            state = getDefaultState();
-            [1, 2, 3].forEach(p => { state.prog[p] = {}; skills.forEach(s => state.prog[p][s.id] = 0); });
-            save(); updateUI(); $('resetConfirmOverlay').classList.remove('active'); playClick();
+            playClick();
+            if (!confirm('Pull: взять данные из облака?\n\nЛокальный прогресс игроков будет заменён данными Supabase.')) return;
+            savedAt = 0; localStorage.removeItem(LS_SAVED);
+            cloudReady = false;
+            const ok = await bootSync(true);
+            alert(ok ? 'Готово. Данные загружены из Supabase.' : 'Не удалось связаться с Supabase.\n\n' + lastError);
         };
 
-        window.switchPlayer = p => { 
-            if(p>=1 && p<=3){ 
-                playClick(); 
-                state.p = p; 
-                save(); 
-                updateUI(); 
-                if (window.innerWidth <= 768) switchView('wheel'); 
-            } 
+        window.forcePush = async () => {
+            playClick();
+            if (!confirm('Push: отправить данные этого устройства в облако?\n\nПерезапишутся строки всех игроков (1–' + PLAYERS + ').')) return;
+            if (!cloudReady && !(await bootSync(false))) return alert('Нет связи с Supabase.\n\n' + lastError);
+            setSyncStatus('saving');
+            let done = 0;
+            for (const p of [1, 2, 3]) if (await pushPlayer(p, true)) done++;
+            setSyncStatus(done === PLAYERS ? 'synced' : 'error', 'Отправлено строк: ' + done + ' из ' + PLAYERS);
+            alert(done === PLAYERS ? 'Готово. Облако совпадает с этим устройством.' : 'Отправлено ' + done + ' из ' + PLAYERS + '.\n\n' + lastError);
+        };
+
+        window.openResetConfirm = () => { closeSettings(); $('resetConfirmOverlay').classList.add('active'); };
+        window.confirmResetProgress = async () => {
+            state = getDefaultState();
+            [1, 2, 3].forEach(p => { state.prog[p] = {}; skills.forEach(s => state.prog[p][s.id] = 0); });
+            savedAt = Date.now(); localStorage.setItem(LS_SAVED, savedAt);
+            try { localStorage.setItem(LS_STATE, JSON.stringify(state)); } catch (e) {}
+            clearTimeout(syncTimer);
+            updateUI(); $('resetConfirmOverlay').classList.remove('active'); playClick();
+            if (!cloudReady) { setSyncStatus('local', 'Сброс сохранён на устройстве, облако недоступно'); return; }
+            for (const p of [1, 2, 3]) await pushPlayer(p, true);
+            setSyncStatus('synced', 'Сброс применён ко всем строкам Supabase');
+        };
+
+        window.switchPlayer = p => {
+            if (!(p >= 1 && p <= PLAYERS) || p === state.p) return;
+            playClick();
+            const prev = state.p;
+            state.p = p;
+            localStorage.setItem(LS_LINK, p);
+            save();
+            if (cloudReady) pushPlayer(prev);
+            updateUI();
+            if (window.innerWidth <= 768) switchView('wheel');
         };
         window.showQR = (e, pId) => { e.stopPropagation(); playClick(); $('qrPlayerId').textContent = pId; $('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`https://m4dsw4ds.github.io/det-practice-wheel/?player=${pId}`)}&color=131f24&bgcolor=ffffff`; $('qrOverlay').classList.add('active'); };
         
@@ -791,9 +797,9 @@ window.openResetConfirm = () => { closeSettings(); $('resetConfirmOverlay').clas
             }
 
             if (stolen) {
-                const others = [1,2,3].filter(x => x !== state.p); const targetP = others[Math.floor(Math.random() * 2)]; 
-                state.score[targetP] += baseXP + bonusXP; 
-                showEventModal('🐈‍⬛', 'CAT IN A BAG', `The Cat stole your <b>+${baseXP} XP</b>!<br><br>But you keep your progress (${state.prog[state.p][sector.id]}/6).<br><br>The XP goes to <b>Player ${targetP}</b>!`, 'var(--p1-color)', 'Damn Cat 😿', null); playWin('cat'); 
+                if (!state.stolenBag) state.stolenBag = {1:0, 2:0, 3:0};
+                state.stolenBag[state.p] += baseXP + bonusXP;
+                showEventModal('🐈‍⬛', 'CAT IN A BAG', `The Cat stole your <b>+${baseXP} XP</b>!<br><br>But you keep your progress (${state.prog[state.p][sector.id]}/6).<br><br><span style=\"opacity:0.7\">🐈‍⬛ Съел: +${baseXP} XP в мешок</span>`, 'var(--p1-color)', 'Damn Cat 😿', null); playWin('cat'); 
             } else { state.score[state.p] += baseXP + bonusXP; }
             
             save(); updateUI(); closeModal();
@@ -817,6 +823,9 @@ window.openResetConfirm = () => { closeSettings(); $('resetConfirmOverlay').clas
 
         function executeSpin() {
             if (isSpinning) return; initAudio(); playStart();
+            if (curIdx >= (REPEATS - 2) * allSectors.length) {
+                curIdx = Math.floor(REPEATS / 2) * allSectors.length + (curIdx % allSectors.length);
+            }
             isSpinning = true; spinBtn.classList.add('hidden'); winIdx = Math.floor(Math.random() * allSectors.length);
             const targetIdx = calculateTargetIndex(winIdx);
             const h = getCardHeight(), startOff = -(curIdx * h) + (drumWrapper.clientHeight / 2 - h / 2);
@@ -881,13 +890,14 @@ window.openResetConfirm = () => { closeSettings(); $('resetConfirmOverlay').clas
 // НАВИГАЦИЯ (стрелки + Enter/Space + H/S/Esc)
 // ============================================
 window.addEventListener('keydown', (e) => {
-    if (AUTOTEST_RUNNING) return;
     const activeModal = document.querySelector('.modal-overlay.active');
     const k = e.key;
 
     switch (k) {
         case 'Escape':
+        case 'Backspace':
             if (activeModal) {
+                e.preventDefault();
                 if ($('modalOverlay').classList.contains('active')) btnClose.click();
                 else activeModal.classList.remove('active');
             }
@@ -930,20 +940,24 @@ window.addEventListener('keydown', (e) => {
         
         
 
-        window.addEventListener('load', () => { 
-            const urlPlayer = new URLSearchParams(window.location.search).get('player');
-            if (urlPlayer && [1,2,3].includes(parseInt(urlPlayer))) { state.p = parseInt(urlPlayer); }
-            renderDrum(); 
-            updateUI(); 
-            setTimeout(() => syncFromCloud(), 500); 
-            setTimeout(() => { curIdx = Math.floor(REPEATS / 2) * allSectors.length; setPos(curIdx); }, 50); 
-            window.addEventListener('resize', () => setPos(curIdx)); 
+        window.addEventListener('load', () => {
+            const urlPlayer = parseInt(new URLSearchParams(location.search).get('player'));
+            if ([1, 2, 3].includes(urlPlayer)) localStorage.setItem(LS_LINK, urlPlayer);
+            const linked = parseInt(localStorage.getItem(LS_LINK));
+            if ([1, 2, 3].includes(urlPlayer)) state.p = urlPlayer;
+            else if ([1, 2, 3].includes(linked)) state.p = linked;
+            renderDrum();
+            updateUI();
+            setTimeout(() => { curIdx = Math.floor(REPEATS / 2) * allSectors.length; setPos(curIdx); }, 50);
+            window.addEventListener('resize', () => setPos(curIdx));
             if (window.innerWidth <= 768) switchView(localStorage.getItem('detGame_mobileView') || 'wheel');
             document.querySelectorAll('.det-letter').forEach(el => {
                 el.addEventListener('click', () => switchView(el.dataset.view));
             });
-window._autotestShowModal = (new URLSearchParams(location.search).get('autotest') === '1');
-setTimeout(runAutotest, 1500);
+            syncInd.onclick = () => runAutotest();
+            if (new URLSearchParams(location.search).get('autotest') === '1') { runAutotest(); return; }
+            migrateLocalOnce();
+            setTimeout(() => bootSync(true), 300);
             if (window.innerWidth <= 768) {
                 const layout = document.querySelector('.game-layout');
                 let tsX = 0, tsY = 0;
