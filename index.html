@@ -153,8 +153,8 @@
 
         @media (min-width: 1200px) {
             .game-layout { display: grid; grid-template-columns: 260px 420px 290px; justify-content: center; align-items: stretch; gap: 30px; width: 100%; height: 520px; margin: 0 auto; }
-            .player-switch { grid-column: 1; flex-direction: column; width: 100%; justify-content: flex-start; gap: 10px; overflow-y: auto; overflow-x: hidden; }
-            .player-card { flex: none; width: 100%; padding: 12px; height: auto; min-height: 96px; }
+            .player-switch { grid-column: 1; flex-direction: column; width: 100%; justify-content: flex-start; gap: 10px; padding: 6px 4px; overflow-y: auto; overflow-x: hidden; }
+            .player-card { flex: 1 1 auto; width: 100%; padding: 12px; height: auto; min-height: 92px; }
             .drum-wrapper { grid-column: 2; width: 100%; height: 100%; }
             .right-panel { display: flex; grid-column: 3; width: 100%; height: 100%; }
         }
@@ -202,13 +202,12 @@
         .modal.in-progress-mode { animation: pulse-border 1.5s infinite; }
 
         .player-name { font-size: 0.68rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; color: #b0bec5; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .watch-head { display: none; align-items: center; gap: 6px; align-self: center; font-size: 0.7rem; font-weight: 800; color: var(--sys-gold); border: 1px solid rgba(255,200,0,0.45); background: rgba(255,200,0,0.08); border-radius: 999px; padding: 5px 12px; margin-bottom: 8px; cursor: pointer; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
-        .game-layout.watching .drum-wrapper, .game-layout.watching .player-switch { display: none; }
         .game-layout.watching .right-panel { display: flex; flex: 1; width: 100%; min-height: 0; }
-        .host-toggle { display: flex; gap: 8px; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 800; color: #b0bec5; text-transform: none; letter-spacing: 0; padding: 4px 0; }
-        .host-toggle input { appearance: none; -webkit-appearance: none; width: 20px; height: 20px; border: 2px solid var(--border); border-radius: 6px; background: #0d161a; position: relative; cursor: pointer; flex: 0 0 auto; }
-        .host-toggle input:checked { background: var(--sys-cyan); border-color: var(--sys-cyan); }
-        .host-toggle input:checked::after { content: '✓'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #000; font-size: 13px; font-weight: 900; }
+        @media (max-width: 1199px) {
+            .game-layout.watching .drum-wrapper, .game-layout.watching .player-switch { display: none; }
+        }
+        .host-btn { background: transparent; border: 2px solid var(--border); color: #90a4ae; border-bottom-width: 4px; }
+        .host-btn.on { background: var(--sys-cyan); border-color: var(--sys-cyan); color: #001018; }
         .adv-links { display: flex; gap: 12px; justify-content: center; padding-top: 2px; }
         .adv-links a { color: #607d8b; font-size: 0.62rem; font-weight: 800; text-decoration: underline; cursor: pointer; }
         .ident-input { width: 100%; padding: 12px; border-radius: 12px; border: 2px solid var(--border); background: #0d161a; color: #fff; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 1rem; margin-bottom: 10px; text-align: center; }
@@ -234,7 +233,7 @@
     <h1 id="detLogo"><span class="det-letter" data-view="players">D</span><span class="det-sep">.</span><span class="det-letter" data-view="wheel">E</span><span class="det-sep">.</span><span class="det-letter" data-view="progress">T</span></h1>
 
     <div class="game-layout">
-        <button class="mobile-player-badge" id="mobileBadge" onclick="switchView('players')">
+        <button class="mobile-player-badge" id="mobileBadge" onclick="badgeTap()">
             <span id="badgeAvatar">🦉</span>
             <span id="badgeScore">0</span>
         </button>
@@ -249,7 +248,6 @@
 
         <div class="right-panel">
             <div class="dashboard p1-active" id="dashboardPanel">
-                <div class="watch-head" id="watchHead" onclick="stopWatching()">👁 <b id="watchName">…</b> — read only</div>
                 <div class="skills-grid" id="skillsGrid"></div>
             </div>
         </div>
@@ -260,8 +258,8 @@
             <div class="modal-close-x" onclick="closeSettings()">×</div>
             <h2 class="settings-title">Settings</h2>
             <div class="action-btns">
+                <button class="btn host-btn" id="hostBtn" onclick="toggleHost()">🖥 Shared tablet</button>
                 <button class="btn btn-close" onclick="renameMe()">✏️ Change name</button>
-                <label class="host-toggle"><input type="checkbox" id="hostToggle" onchange="toggleHost(this.checked)"> Shared tablet — play as anyone</label>
                 <button class="btn btn-accept" onclick="syncNow()">🔄 Sync now</button>
                 <button class="btn btn-danger" onclick="openResetConfirm()">Reset progress</button>
                 <button class="btn btn-close" onclick="closeSettings()">Close</button>
@@ -377,6 +375,7 @@
         function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
 document.addEventListener('click', initAudio, { once: true });
 document.addEventListener('touchstart', initAudio, { once: true });
+        const buzz = p => { try { if (navigator.vibrate && !isMuted) navigator.vibrate(p); } catch (e) {} };
 
         window.toggleSound = () => { isMuted = !isMuted; document.getElementById('soundToggle').textContent = isMuted ? '🔇' : '🔊'; };
         function playTick() { if (isMuted || !audioCtx) return; tickCount = (tickCount + 1) % 3; const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); if (tickCount === 0) { o.type = 'square'; o.frequency.setValueAtTime(800, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.05); } else if (tickCount === 1) { o.type = 'sine'; o.frequency.setValueAtTime(1200, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.05); } else { o.type = 'triangle'; o.frequency.setValueAtTime(600, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.05); } g.gain.setValueAtTime(0.05, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05); o.start(); o.stop(audioCtx.currentTime + 0.05); }
@@ -440,8 +439,9 @@ document.addEventListener('touchstart', initAudio, { once: true });
         let savedAt = +(localStorage.getItem(LS_SAVED) || 0), syncedAt = +(localStorage.getItem(LS_SYNCED) || 0);
         const isDirty = () => savedAt > syncedAt;
 
+        const isDesktop = window.matchMedia('(min-width: 1025px)').matches;
         let myId = +(localStorage.getItem(LS_MY) || 0) || 0;
-        let hostMode = localStorage.getItem(LS_HOST) === '1';
+        let hostMode = isDesktop || localStorage.getItem(LS_HOST) === '1';
         let viewId = 0, friendIds = [], pendingJoin = '';
         const meta = {};                                   // id -> {name, avatar, token}
         const canWrite = id => hostMode || id === myId;
@@ -630,15 +630,13 @@ document.addEventListener('touchstart', initAudio, { once: true });
             }).join('');
             $('dashboardPanel').className = `dashboard p${Math.max(0, ids.indexOf(shownId())) % 3 + 1}-active`;
             updateMobileBadge();
-            updateWatchBanner();
+            syncWatchState();
         }
 
-        function updateWatchBanner() {
+        function syncWatchState() {
             const on = !!viewId;
-            $('watchHead').style.display = on ? 'flex' : 'none';
-            if (on) $('watchName').textContent = nameOf(viewId);
-            $('dashboardPanel').classList.toggle('watching', on);
             document.querySelector('.game-layout').classList.toggle('watching', on);
+            $('dashboardPanel').classList.toggle('watching', on);
         }
 
         window.stopWatching = () => { viewId = 0; updateUI(); if (window.innerWidth <= 768) switchView('wheel'); };
@@ -765,7 +763,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
                 check('host can switch card', state.p === 2);
                 hostMode = false; selectPlayer(3);
                 check('someone else\'s card opens read-only', viewId === 3 && document.querySelector('.game-layout').classList.contains('watching'), 'viewId=' + viewId);
-                check('wheel hidden while watching', getComputedStyle(document.querySelector('.drum-wrapper')).display === 'none');
+                check('progress panel visible while watching', getComputedStyle(document.querySelector('.right-panel')).display !== 'none');
                 stopWatching();
                 check('watch exit restores wheel', viewId === 0 && !document.querySelector('.game-layout').classList.contains('watching'));
                 state.p = 2; state.score[2] = 500; state.score[3] = 777;
@@ -813,13 +811,16 @@ document.addEventListener('touchstart', initAudio, { once: true });
 
         window.closeCardModal = () => { $('luckyOverlay').classList.remove('active'); playClick(); };
         window.openSettings = () => {
-            $('hostToggle').checked = hostMode;
+            const hb = $('hostBtn');
+            hb.classList.toggle('on', hostMode);
+            hb.style.display = isDesktop ? 'none' : 'block';
             $('settingsOverlay').classList.add('active'); playClick();
         };
         window.closeSettings = () => { $('settingsOverlay').classList.remove('active'); playClick(); };
 
         window.switchView = function(view) {
             const layout = document.querySelector('.game-layout');
+            if (viewId && view !== 'progress') { viewId = 0; syncWatchState(); updateUI(); }
             layout.classList.remove('view-players', 'view-wheel', 'view-progress');
             layout.classList.add('view-' + view);
             document.querySelectorAll('.det-letter').forEach(l => l.classList.toggle('active', l.dataset.view === view));
@@ -881,7 +882,8 @@ document.addEventListener('touchstart', initAudio, { once: true });
         };
 
         window.selectPlayer = id => {
-            playClick();
+            playClick(); buzz(10);
+            if (viewId === id) { stopWatching(); return; }
             if (viewId) viewId = 0;
             if (canWrite(id)) {
                 if (id === state.p) { updateUI(); return; }
@@ -895,8 +897,10 @@ document.addEventListener('touchstart', initAudio, { once: true });
             }
             viewId = id;
             updateUI();
-            switchView('progress');
+            if (window.innerWidth <= 768) switchView('progress');
         };
+
+        window.badgeTap = () => { if (viewId) return stopWatching(); switchView('players'); };
 
         window.showQR = (e, pId) => {
             e.stopPropagation(); playClick();
@@ -1032,11 +1036,12 @@ document.addEventListener('touchstart', initAudio, { once: true });
             if (cloudReady) api(`player_data?player_id=eq.${id}`, { method: 'PATCH', headers: { 'Prefer': 'return=minimal' }, body: JSON.stringify({ name: meta[id].name }) }).catch(() => {});
         };
 
-        window.toggleHost = on => {
-            hostMode = !!on;
+        window.toggleHost = () => {
+            if (isDesktop) return;
+            hostMode = !hostMode;
             localStorage.setItem(LS_HOST, hostMode ? '1' : '0');
             if (!hostMode) { viewId = 0; if (myId) state.p = myId; }
-            if (hostMode && !myId) return window.openIdentity();
+            $('hostBtn').classList.toggle('on', hostMode);
             updateUI();
         };
 
@@ -1048,7 +1053,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
             taskStateDesc.style.display = 'none'; taskStateProgress.style.display = 'block'; 
             btnAccept.style.display = 'none'; btnFinish.style.display = 'block'; btnClose.textContent = 'Abort Task';
             modalOverlay.classList.add('active');
-            if (navigator.vibrate) navigator.vibrate(50);
+            buzz([100, 50, 100]);
         }
 
         function closeModal() { 
@@ -1079,14 +1084,16 @@ document.addEventListener('touchstart', initAudio, { once: true });
             }
 
             if (stolen) {
-                if (!state.stolenBag) state.stolenBag = {1:0, 2:0, 3:0};
+                if (!state.stolenBag) state.stolenBag = { 1: 0, 2: 0, 3: 0 };
                 state.stolenBag[state.p] += baseXP + bonusXP;
+                buzz([200, 100, 200, 100, 200]);
                 showEventModal('🐈‍⬛', 'CAT IN A BAG', `The Cat stole your <b>+${baseXP} XP</b>!<br><br>But you keep your progress (${state.prog[state.p][sector.id]}/6).<br><br><span style=\"opacity:0.7\">🐈‍⬛ Stashed: +${baseXP} XP in the bag</span>`, 'var(--p1-color)', 'Damn Cat 😿', null); playWin('cat'); 
-            } else { state.score[state.p] += baseXP + bonusXP; }
+            } else { state.score[state.p] += baseXP + bonusXP; buzz(20); }
             
             save(); updateUI(); closeModal();
 
             if (isMastered) {
+                buzz([30, 30, 30, 30, 100]);
                 setTimeout(() => {
                     showEventModal('🏆', 'SKILL MASTERED!', `You completed all 6 levels of <b>${sector.l}</b>!<br><br><span class="xp-badge">+1000 XP BONUS</span>`, 'var(--sys-gold)', 'Awesome!', null);
                 }, 800);
@@ -1107,7 +1114,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
             if (isSpinning) return;
             if (viewId) { viewId = 0; updateUI(); if (window.innerWidth <= 768) switchView('wheel'); }
             ensurePlayer(state.p);
-            initAudio(); playStart();
+            initAudio(); playStart(); buzz(30);
             if (curIdx >= (REPEATS - 2) * allSectors.length) {
                 curIdx = Math.floor(REPEATS / 2) * allSectors.length + (curIdx % allSectors.length);
             }
@@ -1121,6 +1128,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
             setTimeout(() => {
                 isSpinning = false; 
                 setPos(curIdx, false);
+                buzz([50,30,50]);
                 const winCard = drumTrack.children[curIdx]; 
                 if (winCard) {
                     const blinks = ['blink-gold', 'blink-blue', 'blink-flash'], chosenBlink = blinks[Math.floor(Math.random() * blinks.length)]; 
@@ -1262,12 +1270,12 @@ window.addEventListener('keydown', (e) => {
                     const dx = e.changedTouches[0].clientX - tsX;
                     const dy = e.changedTouches[0].clientY - tsY;
                     if (Math.abs(dx) > 50 && Math.abs(dy) < 40) {
-                        const views = ['players', 'wheel', 'progress'];
-                        const cur = views.find(v => layout.classList.contains('view-' + v)) || 'wheel';
-                        const idx = views.indexOf(cur);
-                        const nextIdx = dx < 0 ? (idx + 1) % 3 : (idx + 2) % 3;
+                        const views = viewId ? ['players', 'progress'] : ['players', 'wheel', 'progress'];
+                        const cur = views.find(v => layout.classList.contains('view-' + v)) || views[0];
+                        const idx = Math.max(0, views.indexOf(cur));
+                        const nextIdx = dx < 0 ? (idx + 1) % views.length : (idx + views.length - 1) % views.length;
                         switchView(views[nextIdx]);
-                        if (navigator.vibrate) navigator.vibrate(15);
+                        buzz(12);
                     }
                 }, { passive: true });
             }
