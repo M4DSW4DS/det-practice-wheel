@@ -57,8 +57,6 @@
         
         .player-card.active { transform: scale(1.03); opacity: 1; z-index: 10; border-color: var(--pc); box-shadow: 0 0 15px var(--pc-soft); background: radial-gradient(circle at center, var(--pc-soft) 0%, var(--panel) 80%); }
         
-        .del-friend { position: absolute; top: 6px; right: 6px; background: rgba(255,75,75,0.15); border: 1px solid var(--p1-color); color: var(--p1-color); width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 900; cursor: pointer; z-index: 20; transition: 0.2s; }
-        .del-friend:hover { background: var(--p1-color); color: #fff; }
 
         .player-content { display: flex; align-items: center; justify-content: space-between; width: 100%; }
         
@@ -268,6 +266,7 @@
             <div class="action-btns">
                 <button class="btn host-btn" id="hostBtn" onclick="toggleHost()">🖥 Shared tablet</button>
                 <button class="btn btn-close" onclick="renameMe()">✏️ Change name</button>
+                <button class="btn btn-close" onclick="openFriendsManager()">👥 Manage friends</button>
                 <button class="btn btn-accept" onclick="syncNow()">🔄 Sync now</button>
                 <button class="btn btn-danger" onclick="openResetConfirm()">Reset progress</button>
                 <button class="btn btn-close" onclick="logoutMe()">🚪 Logout</button>
@@ -331,7 +330,7 @@
         <div class="modal" id="qrModal" style="border-color: var(--sys-cyan);">
             <div class="modal-close-x" onclick="document.getElementById('qrOverlay').classList.remove('active')">×</div>
             <h2 class="modal-title" style="color: var(--sys-cyan);">INVITE FRIEND</h2>
-            <p class="modal-desc">Scan this QR code or copy the link below.</p>
+            <p class="modal-desc">Scan this QR code or copy the link below to join <b id="qrPlayerId">…</b>.</p>
             <img src="" id="qrImage" class="qr-image" alt="QR Code" style="margin-bottom: 5px;">
             
             <div class="qr-code" id="qrCode" style="font-size: 1.4rem; font-weight: 900; color: var(--sys-gold); letter-spacing: 3px; margin: 10px 0;"></div>
@@ -344,6 +343,15 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="friendsOverlay">
+        <div class="modal settings-modal pop-spring" style="border-color: var(--sys-cyan);">
+            <div class="modal-close-x" onclick="document.getElementById('friendsOverlay').classList.remove('active')">×</div>
+            <h2 class="modal-title" style="color: var(--sys-cyan);">MANAGE FRIENDS</h2>
+            <p class="modal-desc" style="margin-bottom: 12px;">Tap Remove to disconnect a friend.</p>
+            <div id="friendsList" style="display: flex; flex-direction: column; gap: 8px; width: 100%; margin-bottom: 12px; max-height: 300px; overflow-y: auto;"></div>
+            <button class="btn btn-close" onclick="document.getElementById('friendsOverlay').classList.remove('active')">Close</button>
+        </div>
+    </div>
     <div class="modal-overlay" id="luckyOverlay">
         <div class="modal" id="luckyModal">
             <div class="modal-close-x" onclick="closeCardModal()">×</div>
@@ -685,9 +693,7 @@ document.addEventListener('touchstart', initAudio, { once: true });
             $('playerSwitch').innerHTML = ids.map((id, i) => {
                 const active = shownId() === id, [c, soft] = PC[i % 3];
                 const inv = (state.inv[id] || []).map((x, k) => `<div class="inv-icon" onclick="useCard(event, ${id}, ${k})">${x.e}${x.val ? `<div class="inv-badge">+${x.val}</div>` : ''}</div>`).join('');
-                const delBtn = id !== myId ? `<div class="del-friend" onclick="removeFriend(event, ${id})" title="Remove friend">×</div>` : '';
                 return `<div class="player-card${active ? ' active' : ''}" style="--pc:${c};--pc-soft:${soft}" onclick="selectPlayer(${id})">
-                    ${delBtn}
                     <div class="player-content">
                         <span class="p-avatar" onclick="showQR(event, ${id})" title="Invite">${esc(avatarOf(id))}</span>
                         <span class="score-display">${state.score[id] | 0}</span>
@@ -994,8 +1000,8 @@ document.addEventListener('touchstart', initAudio, { once: true });
         };
 
         window.removeFriend = async (e, friendId) => {
-            e.stopPropagation();
-            if (!confirm('Remove this friend?\n\nThey will disappear from your list, and you from theirs.')) return;
+            if (e && e.stopPropagation) e.stopPropagation();
+            if (!confirm(`Remove ${nameOf(friendId)}?\n\nThey will disappear from your list, and you from theirs.`)) return;
             if (!cloudReady) return alert('No connection to Supabase.');
             try {
                 const filter = `or=(and(owner_id.eq.${myId},friend_id.eq.${friendId}),and(owner_id.eq.${friendId},friend_id.eq.${myId}))`;
@@ -1006,10 +1012,28 @@ document.addEventListener('touchstart', initAudio, { once: true });
                 if (viewId === friendId) viewId = 0;
                 delete meta[friendId];
                 updateUI();
-                alert('Friend removed.');
+                if ($('friendsOverlay').classList.contains('active')) openFriendsManager();
             } catch (err) {
                 alert('Failed to remove friend: ' + err.message);
             }
+        };
+
+        window.openFriendsManager = () => {
+            closeSettings();
+            const list = $('friendsList');
+            if (!friendIds.length) {
+                list.innerHTML = '<p style="color:#78909c;font-weight:700;padding:20px;text-align:center;">No friends yet.<br><br>Tap your avatar and share the invite link.</p>';
+            } else {
+                list.innerHTML = friendIds.map(id => `
+                    <div style="display:flex;align-items:center;gap:10px;padding:10px;background:#0d161a;border:1px solid var(--border);border-radius:10px;">
+                        <span style="font-size:1.8rem;">${esc(avatarOf(id))}</span>
+                        <span style="flex:1;text-align:left;font-weight:800;font-size:0.9rem;">${esc(nameOf(id))}</span>
+                        <button class="btn btn-danger" style="width:auto;padding:8px 14px;font-size:0.8rem;" onclick="removeFriend(null, ${id})">Remove</button>
+                    </div>
+                `).join('');
+            }
+            $('friendsOverlay').classList.add('active');
+            playClick();
         };
 
         window.logoutMe = () => {
